@@ -1,0 +1,5 @@
+{
+  "name": "PAYG HR Platform",
+  "description": "A Pay-As-You-Go (PAYG) hiring platform where customers are charged for specific services like job posts and background checks, rather than a flat subscription. This app uses AI to assist with generating job descriptions.",
+  "requestFramePermissions": []
+}
