@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { Job, View } from '../types';
 import { JobStatus } from '../types';
@@ -18,11 +17,19 @@ const statusColors: Record<JobStatus, string> = {
 
 const JobList: React.FC<JobListProps> = ({ jobs, onSelectJob, onViewChange }) => {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filteredJobs = useMemo(() => {
-    if (filter === 'ALL') return jobs;
-    return jobs.filter(job => job.status === filter);
-  }, [jobs, filter]);
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    return jobs.filter(job => {
+      const matchesStatus = filter === 'ALL' || job.status === filter;
+      const matchesSearch =
+        lowercasedSearchTerm === '' ||
+        job.title.toLowerCase().includes(lowercasedSearchTerm) ||
+        job.location.toLowerCase().includes(lowercasedSearchTerm);
+      return matchesStatus && matchesSearch;
+    });
+  }, [jobs, filter, searchTerm]);
 
   const FilterButton: React.FC<{ status: JobStatus | 'ALL', label: string }> = ({ status, label }) => (
     <button
@@ -53,31 +60,46 @@ const JobList: React.FC<JobListProps> = ({ jobs, onSelectJob, onViewChange }) =>
             </button>
         </div>
         
-        <div className="mb-4 flex items-center space-x-2 p-1 bg-slate-100 rounded-full w-full sm:w-auto">
-            <FilterButton status="ALL" label="All" />
-            <FilterButton status={JobStatus.ACTIVE} label="Active" />
-            <FilterButton status={JobStatus.DRAFT} label="Draft" />
-            <FilterButton status={JobStatus.CLOSED} label="Closed" />
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+             <input
+                type="text"
+                placeholder="Search by title or location..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="flex-grow px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+            <div className="flex-shrink-0 flex items-center space-x-2 p-1 bg-slate-100 rounded-full">
+                <FilterButton status="ALL" label="All" />
+                <FilterButton status={JobStatus.ACTIVE} label="Active" />
+                <FilterButton status={JobStatus.DRAFT} label="Draft" />
+                <FilterButton status={JobStatus.CLOSED} label="Closed" />
+            </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <ul className="divide-y divide-slate-200">
-                {filteredJobs.map((job) => (
-                <li key={job.id} onClick={() => onSelectJob(job.id)} className="p-6 hover:bg-slate-50 cursor-pointer transition-colors">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-lg font-semibold text-indigo-600">{job.title}</p>
-                            <p className="text-sm text-slate-500 mt-1">
-                                {job.location} <span className="mx-2 text-slate-300">&bull;</span> {job.salary}
-                            </p>
+                {filteredJobs.length > 0 ? (
+                    filteredJobs.map((job) => (
+                    <li key={job.id} onClick={() => onSelectJob(job.id)} className="p-6 hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-lg font-semibold text-indigo-600">{job.title}</p>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    {job.location} <span className="mx-2 text-slate-300">&bull;</span> {job.salary}
+                                </p>
+                            </div>
+                            <div className="text-right flex-shrink-0 ml-4">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[job.status]}`}>{job.status}</span>
+                                <p className="text-sm text-slate-500 mt-2">{job.candidateIds.length} Candidates</p>
+                            </div>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-4">
-                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[job.status]}`}>{job.status}</span>
-                             <p className="text-sm text-slate-500 mt-2">{job.candidateIds.length} Candidates</p>
-                        </div>
-                    </div>
-                </li>
-                ))}
+                    </li>
+                    ))
+                ) : (
+                    <li className="p-6 text-center text-slate-500">
+                        No jobs match your search criteria.
+                    </li>
+                )}
             </ul>
         </div>
     </div>

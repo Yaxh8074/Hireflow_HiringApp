@@ -1,7 +1,6 @@
-
 import React from 'react';
 import type { Job, View, ServiceType, Candidate } from '../types';
-import { CandidateStatus } from '../types';
+import { CandidateStatus, JobStatus } from '../types';
 import type { usePaygApi } from '../hooks/usePaygApi';
 import BriefcaseIcon from './icons/BriefcaseIcon';
 import UserGroupIcon from './icons/UserGroupIcon';
@@ -43,15 +42,13 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
   const hiredCandidates = allCandidates.filter(c => c.status === CandidateStatus.HIRED);
   const costPerHire = hiredCandidates.length > 0 ? totalCost / hiredCandidates.length : 0;
 
-  // FIX: Explicitly type the accumulator `acc` to ensure correct type inference for `costBreakdown`.
-  // This resolves issues where its values were inferred as `unknown`, causing errors downstream.
-  const costBreakdown = api.billingItems.reduce((acc: Record<ServiceType, number>, item) => {
-    if (!acc[item.service]) {
-        acc[item.service] = 0;
-    }
-    acc[item.service] += item.amount;
+  // FIX: A poorly typed `reduce` accumulator was causing a cascading type inference failure across the component.
+  // Explicitly typing the accumulator (`acc`) ensures that `costBreakdown` has the correct
+  // `Record<string, number>` type, resolving the downstream errors.
+  const costBreakdown = api.billingItems.reduce((acc: Record<string, number>, item) => {
+    acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
-  }, {} as Record<ServiceType, number>);
+  }, {});
 
   const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
