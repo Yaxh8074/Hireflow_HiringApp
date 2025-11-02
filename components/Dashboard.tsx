@@ -51,10 +51,10 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
   }, {} as Record<string, Application[]>);
 
   // FIX: Explicitly type the accumulator to resolve type inference issues with reduce, which fixes both errors in this file.
-  const costBreakdown = api.billingItems.reduce((acc: Record<string, number>, item) => {
+  const costBreakdown = api.billingItems.reduce((acc, item) => {
     acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
-  }, {});
+  }, {} as Record<string, number>);
 
   const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
