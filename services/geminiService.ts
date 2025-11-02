@@ -1,19 +1,30 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
+// Safely access the API key to prevent a 'process is not defined' crash in the browser.
+const API_KEY = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
 
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. AI features will not work.");
+let ai: GoogleGenAI | null = null;
+
+if (API_KEY) {
+  try {
+    ai = new GoogleGenAI({ apiKey: API_KEY });
+  } catch (e) {
+    console.error("Failed to initialize GoogleGenAI:", e);
+  }
+} else {
+  console.warn("API_KEY environment variable not set. AI features will be unavailable.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+const AI_UNAVAILABLE_MESSAGE = "AI features are unavailable. The API key has not been configured for this deployment.";
 
 export const generateJobDescription = async (
   title: string,
   keywords: string
 ): Promise<string> => {
-  if (!API_KEY) return "API Key not configured. Please set the API_KEY environment variable.";
+  if (!ai) {
+    return AI_UNAVAILABLE_MESSAGE;
+  }
 
   const prompt = `
     Generate a professional and engaging job description for the following role.
@@ -44,7 +55,9 @@ export const screenCandidate = async (
   jobDescription: string,
   candidateSummary: string
 ): Promise<string> => {
-  if (!API_KEY) return "API Key not configured. Please set the API_KEY environment variable.";
+  if (!ai) {
+    return AI_UNAVAILABLE_MESSAGE;
+  }
   
   const prompt = `
     As an expert HR screener, analyze the following candidate's summary against the provided job description.
