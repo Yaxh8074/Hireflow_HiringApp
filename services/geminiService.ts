@@ -1,28 +1,42 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Safely access the API key to prevent a 'process is not defined' crash in the browser.
-const API_KEY = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
+const AI_UNAVAILABLE_MESSAGE = "AI features are unavailable. The API key has not been configured for this deployment.";
 
 let ai: GoogleGenAI | null = null;
+let isInitialized = false;
 
-if (API_KEY) {
-  try {
-    ai = new GoogleGenAI({ apiKey: API_KEY });
-  } catch (e) {
-    console.error("Failed to initialize GoogleGenAI:", e);
+/**
+ * Lazily initializes and returns the GoogleGenAI instance.
+ * This prevents the app from crashing on load if the API key is not set.
+ */
+function getAiInstance(): GoogleGenAI | null {
+  if (!isInitialized) {
+    // Safely access the API key to prevent 'process is not defined' crash in browser.
+    const API_KEY = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
+
+    if (API_KEY) {
+      try {
+        ai = new GoogleGenAI({ apiKey: API_KEY });
+      } catch (e) {
+        console.error("Failed to initialize GoogleGenAI:", e);
+        ai = null;
+      }
+    } else {
+      console.warn("API_KEY environment variable not set. AI features will be unavailable.");
+      ai = null;
+    }
+    isInitialized = true;
   }
-} else {
-  console.warn("API_KEY environment variable not set. AI features will be unavailable.");
+  return ai;
 }
-
-const AI_UNAVAILABLE_MESSAGE = "AI features are unavailable. The API key has not been configured for this deployment.";
 
 export const generateJobDescription = async (
   title: string,
   keywords: string
 ): Promise<string> => {
-  if (!ai) {
+  const aiInstance = getAiInstance();
+  if (!aiInstance) {
     return AI_UNAVAILABLE_MESSAGE;
   }
 
@@ -39,7 +53,7 @@ export const generateJobDescription = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
@@ -55,7 +69,8 @@ export const screenCandidate = async (
   jobDescription: string,
   candidateSummary: string
 ): Promise<string> => {
-  if (!ai) {
+  const aiInstance = getAiInstance();
+  if (!aiInstance) {
     return AI_UNAVAILABLE_MESSAGE;
   }
   
@@ -76,7 +91,7 @@ export const screenCandidate = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });

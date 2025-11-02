@@ -135,7 +135,8 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
                 {Object.entries(costBreakdown).map(([service, amount]) => (
                     <li key={service} className="flex justify-between items-center text-sm">
                         <span className="text-slate-600">{service}</span>
-                        <span className="font-medium text-slate-800">{formatCurrency(amount)}</span>
+                        {/* FIX: Cast `amount` to number as TypeScript may infer it as 'unknown' from Object.entries. */}
+                        <span className="font-medium text-slate-800">{formatCurrency(amount as number)}</span>
                     </li>
                 ))}
             </ul>
