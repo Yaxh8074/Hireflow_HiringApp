@@ -1,52 +1,68 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  email: string;
-  name: string;
-}
+import { fetchAllCandidates } from '../services/mockApiService';
+import type { User, Candidate } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, pass: string, rememberMe: boolean) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  login: (email: string, pass: string, rememberMe: boolean, role: 'hiring-manager' | 'candidate') => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+let mockCandidates: Record<string, Candidate> | null = null;
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for a logged-in user on initial load, prioritizing localStorage
-    setIsLoading(true);
-    try {
-      const rememberedUser = localStorage.getItem('authUser');
-      const sessionUser = sessionStorage.getItem('authUser');
+    const loadDataAndCheckAuth = async () => {
+      setIsLoading(true);
+      try {
+        // Pre-load candidates for login check
+        mockCandidates = await fetchAllCandidates();
 
-      if (rememberedUser) {
-        setUser(JSON.parse(rememberedUser));
-      } else if (sessionUser) {
-        setUser(JSON.parse(sessionUser));
+        // Check for a logged-in user on initial load
+        const rememberedUser = localStorage.getItem('authUser');
+        const sessionUser = sessionStorage.getItem('authUser');
+
+        if (rememberedUser) {
+          setUser(JSON.parse(rememberedUser));
+        } else if (sessionUser) {
+          setUser(JSON.parse(sessionUser));
+        }
+      } catch (error) {
+        console.error("Failed to parse user from storage", error);
+        sessionStorage.removeItem('authUser');
+        localStorage.removeItem('authUser');
+      } finally {
+          setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to parse user from storage", error);
-      sessionStorage.removeItem('authUser');
-      localStorage.removeItem('authUser');
-    } finally {
-        setIsLoading(false);
-    }
+    };
+    
+    loadDataAndCheckAuth();
   }, []);
 
-  const login = async (email: string, pass: string, rememberMe: boolean): Promise<void> => {
+  const login = async (email: string, pass: string, rememberMe: boolean, role: 'hiring-manager' | 'candidate'): Promise<void> => {
     setIsLoading(true);
     // Simulate API call
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        if (email.toLowerCase() === 'hiring.manager@innovate.com' && pass === 'password123') {
-          const userData: User = { email, name: 'Hiring Manager' };
+        let userData: User | null = null;
+
+        if (role === 'hiring-manager' && email.toLowerCase() === 'hiring.manager@innovate.com' && pass === 'password123') {
+          userData = { id: 'hm1', email, name: 'Hiring Manager', role: 'hiring-manager' };
+        } else if (role === 'candidate' && pass === 'password123') {
+            // Check against pre-loaded mock candidates
+            const foundCandidate = Object.values(mockCandidates || {}).find(c => c.email.toLowerCase() === email.toLowerCase());
+            if (foundCandidate) {
+                userData = { id: foundCandidate.id, email: foundCandidate.email, name: foundCandidate.name, role: 'candidate' };
+            }
+        }
+        
+        if (userData) {
           const storage = rememberMe ? localStorage : sessionStorage;
           storage.setItem('authUser', JSON.stringify(userData));
           setUser(userData);
@@ -60,21 +76,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const loginWithGoogle = async (): Promise<void> => {
-    setIsLoading(true);
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const userData: User = { email: 'sundar.pichai@google.com', name: 'Sundar Pichai' };
-            // Social logins are typically persistent
-            localStorage.setItem('authUser', JSON.stringify(userData));
-            setUser(userData);
-            setIsLoading(false);
-            resolve();
-        }, 1000);
-    });
-  };
-
   const logout = () => {
     sessionStorage.removeItem('authUser');
     localStorage.removeItem('authUser');
@@ -82,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

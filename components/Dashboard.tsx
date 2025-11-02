@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Job, View, ServiceType, Candidate } from '../types';
+import type { Job, View, ServiceType, Candidate, Application } from '../types';
 import { CandidateStatus, JobStatus } from '../types';
 import type { usePaygApi } from '../hooks/usePaygApi';
 import BriefcaseIcon from './icons/BriefcaseIcon';
@@ -37,15 +37,19 @@ const StatCard: React.FC<{ icon: React.ReactNode, title: string, value: string |
 
 const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob }) => {
   const totalCost = api.billingItems.reduce((sum, item) => sum + item.amount, 0);
-  const allCandidates = Object.values(api.candidates);
-  const totalCandidates = allCandidates.length;
-  const hiredCandidates = allCandidates.filter(c => c.status === CandidateStatus.HIRED);
-  const costPerHire = hiredCandidates.length > 0 ? totalCost / hiredCandidates.length : 0;
+  const totalCandidates = Object.keys(api.candidates).length;
+  const hiredApplications = api.applications.filter(app => app.status === CandidateStatus.HIRED);
+  const costPerHire = hiredApplications.length > 0 ? totalCost / hiredApplications.length : 0;
+  
+  const applicationsByJob = api.applications.reduce((acc, app) => {
+    if (!acc[app.jobId]) {
+      acc[app.jobId] = [];
+    }
+    acc[app.jobId].push(app);
+    return acc;
+  }, {} as Record<string, Application[]>);
 
-  // FIX: A poorly typed `reduce` accumulator can cause a cascading type inference failure.
-  // Explicitly typing the accumulator with an index signature `{[key: string]: number}` and
-  // providing a plain object `{}` as the initial value resolves the issue.
-  const costBreakdown = api.billingItems.reduce((acc: { [key: string]: number }, item) => {
+  const costBreakdown = api.billingItems.reduce<Record<string, number>>((acc, item) => {
     acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
   }, {});
@@ -101,7 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
                         <li key={job.id} className="py-4 flex items-center justify-between">
                             <div>
                                 <p className="text-md font-medium text-indigo-600 truncate">{job.title}</p>
-                                <p className="text-sm text-slate-500">{job.location} &bull; {job.candidateIds.length} candidates</p>
+                                <p className="text-sm text-slate-500">{job.location} &bull; {applicationsByJob[job.id]?.length || 0} candidates</p>
                             </div>
                             <button 
                                 onClick={() => onSelectJob(job.id)}

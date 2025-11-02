@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import JobList from './components/JobList';
@@ -13,6 +13,8 @@ import { usePaygApi } from './hooks/usePaygApi';
 import type { View, Job } from './types';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/LoginPage';
+import CandidateAppLayout from './components/candidate/CandidateAppLayout';
+
 
 const MainAppLayout: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -38,12 +40,14 @@ const MainAppLayout: React.FC = () => {
       case 'dashboard':
         return <Dashboard api={api} onViewChange={handleViewChange} onSelectJob={handleSelectJob} />;
       case 'jobs':
-        return <JobList jobs={api.jobs} onSelectJob={handleSelectJob} onViewChange={handleViewChange} />;
+        // FIX: Pass applications to JobList
+        return <JobList jobs={api.jobs} applications={api.applications} onSelectJob={handleSelectJob} onViewChange={handleViewChange} />;
       case 'job-detail':
         if (selectedJobId) {
             return <JobDetail jobId={selectedJobId} api={api} onBack={() => handleViewChange('jobs')} />;
         }
-        return <JobList jobs={api.jobs} onSelectJob={handleSelectJob} onViewChange={handleViewChange} />;
+        // FIX: Pass applications to JobList
+        return <JobList jobs={api.jobs} applications={api.applications} onSelectJob={handleSelectJob} onViewChange={handleViewChange} />;
       case 'new-job':
         return <JobPostForm api={api} onJobPosted={handleJobPosted} />;
       case 'billing':
@@ -83,7 +87,7 @@ const MainAppLayout: React.FC = () => {
 
 const App: React.FC = () => {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
      return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -96,7 +100,16 @@ const App: React.FC = () => {
     return <LoginPage />;
   }
 
-  return <MainAppLayout />;
+  if (user.role === 'candidate') {
+    return <CandidateAppLayout />;
+  }
+  
+  if (user.role === 'hiring-manager') {
+    return <MainAppLayout />;
+  }
+
+  // Fallback in case of an unknown role
+  return <LoginPage />;
 };
 
 export default App;

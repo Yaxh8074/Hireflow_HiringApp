@@ -1,0 +1,98 @@
+import React, { useMemo } from 'react';
+import type { usePaygApi } from '../../hooks/usePaygApi';
+import { useAuth } from '../../hooks/useAuth';
+import type { CandidateStatus, Job, Application } from '../../types';
+
+interface MyApplicationsProps {
+  api: ReturnType<typeof usePaygApi>;
+  onSelectJob: (jobId: string) => void;
+}
+
+const statusColors: Record<CandidateStatus, string> = {
+    'Applied': 'bg-blue-100 text-blue-800',
+    'Screening': 'bg-yellow-100 text-yellow-800',
+    'Interviewing': 'bg-purple-100 text-purple-800',
+    'Offer': 'bg-pink-100 text-pink-800',
+    'Hired': 'bg-green-100 text-green-800',
+    'Withdrawn': 'bg-slate-100 text-slate-800',
+};
+
+interface ApplicationWithJob extends Application {
+    job: Job;
+}
+
+const MyApplications: React.FC<MyApplicationsProps> = ({ api, onSelectJob }) => {
+    const { user } = useAuth();
+
+    const myApplications = useMemo((): ApplicationWithJob[] => {
+        if (!user) return [];
+        
+        const jobsById = new Map(api.jobs.map(job => [job.id, job]));
+
+        return api.applications
+            .filter(app => app.candidateId === user.id)
+            .map(app => {
+                const job = jobsById.get(app.jobId);
+                return job ? { ...app, job } : null;
+            })
+            .filter((app): app is ApplicationWithJob => app !== null)
+            .sort((a,b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime());
+    }, [api.applications, api.jobs, user]);
+
+    const handleWithdraw = (applicationId: string, jobTitle: string) => {
+        if (window.confirm(`Are you sure you want to withdraw your application for "${jobTitle}"?`)) {
+            api.withdrawApplication(applicationId);
+        }
+    }
+
+    return (
+        <div>
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-slate-900">My Applications</h1>
+                <p className="text-slate-500 mt-1">Track the status of jobs you've applied for.</p>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                <ul className="divide-y divide-slate-200">
+                    {myApplications.length > 0 ? (
+                        myApplications.map(app => (
+                            <li key={app.id} className="p-6">
+                                <div className="flex flex-col sm:flex-row items-start justify-between">
+                                    <div>
+                                        <p className="text-lg font-semibold text-indigo-600">{app.job.title}</p>
+                                        <p className="text-sm text-slate-500 mt-1">
+                                            {app.job.location} <span className="mx-2 text-slate-300">&bull;</span> Applied on {new Date(app.appliedDate).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0 flex items-center gap-4">
+                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[app.status]}`}>{app.status}</span>
+                                        <button
+                                            onClick={() => onSelectJob(app.job.id)}
+                                            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                                        >
+                                            View Job
+                                        </button>
+                                        {app.status !== 'Withdrawn' && app.status !== 'Hired' && (
+                                            <button
+                                                onClick={() => handleWithdraw(app.id, app.job.title)}
+                                                className="text-sm font-medium text-red-600 hover:text-red-500"
+                                            >
+                                                Withdraw
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </li>
+                        ))
+                    ) : (
+                        <li className="p-10 text-center text-slate-500">
+                            You haven't applied for any jobs yet.
+                        </li>
+                    )}
+                </ul>
+            </div>
+        </div>
+    );
+};
+
+export default MyApplications;

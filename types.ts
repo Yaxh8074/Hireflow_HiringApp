@@ -1,5 +1,7 @@
 
 export type View = 'dashboard' | 'jobs' | 'job-detail' | 'new-job' | 'billing' | 'marketplace' | 'candidates' | 'company-profile';
+export type CandidateView = 'job-search' | 'my-applications' | 'job-detail' | 'profile';
+
 
 export enum ServiceType {
   JOB_POST = 'Job Posting',
@@ -23,7 +25,8 @@ export enum CandidateStatus {
     SCREENING = 'Screening',
     INTERVIEW = 'Interviewing',
     OFFER = 'Offer',
-    HIRED = 'Hired'
+    HIRED = 'Hired',
+    WITHDRAWN = 'Withdrawn',
 }
 
 export enum BackgroundCheckStatus {
@@ -35,9 +38,14 @@ export enum BackgroundCheckStatus {
 export interface Candidate {
   id: string;
   name: string;
+  email: string;
   title: string;
   summary: string;
-  status: CandidateStatus;
+  phone: string;
+  location: string;
+  resumeText: string;
+  resumeFileName?: string | null;
+  resumeFileData?: string | null;
   backgroundCheck: BackgroundCheckStatus;
   aiScreeningResult?: string;
 }
@@ -55,11 +63,30 @@ export interface Job {
   salary: string;
   description: string;
   createdAt: string;
-  candidateIds: string[];
   status: JobStatus;
 }
+
+export interface Application {
+    id: string;
+    jobId: string;
+    candidateId: string;
+    status: CandidateStatus;
+    appliedDate: string;
+    notes?: string;
+    resumeText?: string;
+    resumeFileName?: string;
+    resumeFileData?: string;
+}
+
 
 export interface Company {
     id: string;
     name: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'hiring-manager' | 'candidate';
 }

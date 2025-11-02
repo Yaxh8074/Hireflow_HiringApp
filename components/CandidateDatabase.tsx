@@ -7,30 +7,53 @@ interface CandidateDatabaseProps {
   api: ReturnType<typeof usePaygApi>;
 }
 
+const statusOrder = [
+    CandidateStatus.APPLIED,
+    CandidateStatus.SCREENING,
+    CandidateStatus.INTERVIEW,
+    CandidateStatus.OFFER,
+    CandidateStatus.HIRED,
+    CandidateStatus.WITHDRAWN,
+];
+
 const statusColors: Record<CandidateStatus, string> = {
   [CandidateStatus.APPLIED]: 'bg-blue-100 text-blue-800',
   [CandidateStatus.SCREENING]: 'bg-yellow-100 text-yellow-800',
   [CandidateStatus.INTERVIEW]: 'bg-purple-100 text-purple-800',
   [CandidateStatus.OFFER]: 'bg-pink-100 text-pink-800',
   [CandidateStatus.HIRED]: 'bg-green-100 text-green-800',
+  [CandidateStatus.WITHDRAWN]: 'bg-slate-100 text-slate-800',
 };
 
 const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<CandidateStatus | 'ALL'>('ALL');
   
-  const allCandidates = useMemo(() => Object.values(api.candidates), [api.candidates]);
+  const allCandidatesWithStatus = useMemo(() => {
+    return Object.values(api.candidates).map(candidate => {
+        const candidateApps = api.applications.filter(app => app.candidateId === candidate.id);
+        let mostAdvancedStatus = CandidateStatus.APPLIED;
+        if (candidateApps.length > 0) {
+            mostAdvancedStatus = candidateApps.reduce((mostAdvanced, currentApp) => {
+                return statusOrder.indexOf(currentApp.status) > statusOrder.indexOf(mostAdvanced)
+                    ? currentApp.status
+                    : mostAdvanced;
+            }, candidateApps[0].status);
+        }
+        return { ...candidate, displayStatus: mostAdvancedStatus };
+    });
+  }, [api.candidates, api.applications]);
 
   const filteredCandidates = useMemo(() => {
-    return allCandidates.filter(candidate => {
+    return allCandidatesWithStatus.filter(candidate => {
       const matchesSearch =
         candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus =
-        statusFilter === 'ALL' || candidate.status === statusFilter;
+        statusFilter === 'ALL' || candidate.displayStatus === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [allCandidates, searchTerm, statusFilter]);
+  }, [allCandidatesWithStatus, searchTerm, statusFilter]);
   
   const FilterButton: React.FC<{ status: CandidateStatus | 'ALL', label: string }> = ({ status, label }) => (
     <button
@@ -78,7 +101,10 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
                     <p className="text-xs text-slate-500 mt-2 max-w-xl">{candidate.summary}</p>
                   </div>
                   <div className="text-right ml-4 flex-shrink-0">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[candidate.status]}`}>{candidate.status}</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[candidate.displayStatus]}`}>
+                        {candidate.displayStatus}
+                    </span>
+                    <p className="text-xs text-slate-400 mt-1">Most Advanced</p>
                   </div>
                 </div>
               </li>

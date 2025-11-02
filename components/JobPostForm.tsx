@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { Job } from '../types';
 import { JobStatus } from '../types';
@@ -45,7 +44,10 @@ const JobPostForm: React.FC<JobPostFormProps> = ({ api, onJobPosted }) => {
   return (
     <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-slate-900 mb-1">Create a New Job Post</h1>
-        <p className="text-slate-500 mb-6">Fill in the details below. Publishing a job will incur a one-time posting fee.</p>
+        <p className="text-slate-500 mb-6">
+            Fill in the details below. Publishing a job will incur a one-time posting fee.
+            {api.isDiscountActive && <span className="block font-semibold text-indigo-600">Your 90% new member discount will be applied!</span>}
+        </p>
 
         <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

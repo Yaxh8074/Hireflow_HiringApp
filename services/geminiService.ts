@@ -20,6 +20,8 @@ export const generateJobDescription = async (
     The tone should be encouraging and clear, aimed at attracting top talent.
     Structure it with the following sections: "About the Role", "Key Responsibilities", and "Qualifications".
     
+    IMPORTANT: Do not use any Markdown formatting. For example, do not use asterisks for bold text or hashes for headings. The entire output should be plain text.
+    
     Job Title: ${title}
     
     Key points to include: ${keywords}

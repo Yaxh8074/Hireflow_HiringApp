@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import type { Job, Candidate } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Job, Candidate, Application } from '../types';
 import { JobStatus } from '../types';
 import type { usePaygApi } from '../hooks/usePaygApi';
 import CandidateCard from './CandidateCard';
@@ -20,27 +19,29 @@ const statusColors: Record<JobStatus, string> = {
     [JobStatus.CLOSED]: 'bg-slate-100 text-slate-800',
 }
 
+interface CandidateWithApplication {
+    candidate: Candidate;
+    application: Application;
+}
 
 const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
-  const [job, setJob] = useState<Job | null>(null);
-  const [jobCandidates, setJobCandidates] = useState<Candidate[]>([]);
+  const job = useMemo(() => api.jobs.find(j => j.id === jobId), [jobId, api.jobs]);
+  
+  const candidatesForJob = useMemo(() => {
+    if (!job) return [];
+    return api.applications
+      .filter(app => app.jobId === job.id)
+      .map(app => ({
+        application: app,
+        candidate: api.candidates[app.candidateId]
+      }))
+      .filter(item => item.candidate) as CandidateWithApplication[];
+  }, [job, api.applications, api.candidates]);
 
-  useEffect(() => {
-    const loadJob = async () => {
-      const data = await api.getJobWithCandidates(jobId);
-      if (data) {
-        setJob(data.job);
-        const candidatesForJob = data.job.candidateIds
-            .map(id => api.candidates[id])
-            .filter(Boolean);
-        setJobCandidates(candidatesForJob);
-      }
-    };
-    loadJob();
-  }, [jobId, api.getJobWithCandidates, api.candidates, api.jobs]);
 
   const handlePublish = () => {
-    if (job && window.confirm("Are you sure you want to publish this job? This will incur a job posting fee.")) {
+    const confirmationMessage = `Are you sure you want to publish this job? This will incur a job posting fee. ${api.isDiscountActive ? 'Your 90% new member discount will be applied.' : ''}`;
+    if (job && window.confirm(confirmationMessage)) {
       api.updateJob(job.id, { status: JobStatus.ACTIVE });
     }
   };
@@ -91,11 +92,11 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
             <p className="text-slate-600 whitespace-pre-wrap">{job.description}</p>
         </div>
         <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Candidates ({jobCandidates.length})</h2>
-            {jobCandidates.length > 0 ? (
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Candidates ({candidatesForJob.length})</h2>
+            {candidatesForJob.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {jobCandidates.map(candidate => (
-                        <CandidateCard key={candidate.id} candidate={candidate} job={job} api={api} />
+                    {candidatesForJob.map(({ candidate, application }) => (
+                        <CandidateCard key={candidate.id} candidate={candidate} job={job} application={application} api={api} />
                     ))}
                 </div>
             ) : (
