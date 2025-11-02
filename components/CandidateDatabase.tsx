@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { usePaygApi } from '../hooks/usePaygApi';
 import type { Candidate } from '../types';
@@ -30,7 +31,8 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
   const [statusFilter, setStatusFilter] = useState<CandidateStatus | 'ALL'>('ALL');
   
   const allCandidatesWithStatus = useMemo(() => {
-    return Object.values(api.candidates).map(candidate => {
+    // FIX: Explicitly type `candidate` to resolve type inference issues.
+    return Object.values(api.candidates).map((candidate: Candidate) => {
         const candidateApps = api.applications.filter(app => app.candidateId === candidate.id);
         let mostAdvancedStatus = CandidateStatus.APPLIED;
         if (candidateApps.length > 0) {

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Job, View, ServiceType, Candidate, Application } from '../types';
 import { CandidateStatus, JobStatus } from '../types';
@@ -49,7 +50,8 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
     return acc;
   }, {} as Record<string, Application[]>);
 
-  const costBreakdown = api.billingItems.reduce<Record<string, number>>((acc, item) => {
+  // FIX: Explicitly type the accumulator to resolve type inference issues with reduce, which fixes both errors in this file.
+  const costBreakdown = api.billingItems.reduce((acc: Record<string, number>, item) => {
     acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
   }, {});
