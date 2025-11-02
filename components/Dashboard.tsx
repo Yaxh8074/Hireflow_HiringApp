@@ -42,10 +42,10 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
   const hiredCandidates = allCandidates.filter(c => c.status === CandidateStatus.HIRED);
   const costPerHire = hiredCandidates.length > 0 ? totalCost / hiredCandidates.length : 0;
 
-  // FIX: A poorly typed `reduce` accumulator was causing a cascading type inference failure across the component.
-  // Explicitly typing the accumulator (`acc`) ensures that `costBreakdown` has the correct
-  // `Record<string, number>` type, resolving the downstream errors.
-  const costBreakdown = api.billingItems.reduce((acc: Record<string, number>, item) => {
+  // FIX: A poorly typed `reduce` accumulator can cause a cascading type inference failure.
+  // Explicitly typing the accumulator with an index signature `{[key: string]: number}` and
+  // providing a plain object `{}` as the initial value resolves the issue.
+  const costBreakdown = api.billingItems.reduce((acc: { [key: string]: number }, item) => {
     acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
   }, {});
@@ -74,7 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
         <StatCard 
             icon={<BriefcaseIcon className="h-6 w-6 text-white"/>} 
             title="Active Jobs" 
-            value={api.jobs.filter(j => j.status === 'Active').length}
+            value={api.jobs.filter(j => j.status === JobStatus.ACTIVE).length}
             actionText="Manage jobs"
             onAction={() => onViewChange('jobs')}
         />

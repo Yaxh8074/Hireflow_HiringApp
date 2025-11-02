@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { usePaygApi } from '../hooks/usePaygApi';
 import type { Candidate } from '../types';
@@ -32,48 +31,63 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
       return matchesSearch && matchesStatus;
     });
   }, [allCandidates, searchTerm, statusFilter]);
+  
+  const FilterButton: React.FC<{ status: CandidateStatus | 'ALL', label: string }> = ({ status, label }) => (
+    <button
+      onClick={() => setStatusFilter(status)}
+      className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+        statusFilter === status
+          ? 'bg-indigo-600 text-white shadow-sm'
+          : 'bg-white text-slate-600 hover:bg-slate-100'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-slate-900 mb-1">Candidate Database</h1>
       <p className="text-slate-500 mb-6">Search and filter all candidates across all your job postings.</p>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="mb-6 space-y-4">
         <input
           type="text"
           placeholder="Search by name or title..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="flex-grow px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         />
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as CandidateStatus | 'ALL')}
-          className="px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        >
-          <option value="ALL">All Statuses</option>
-          {Object.values(CandidateStatus).map(status => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2 p-1 bg-slate-100 rounded-full">
+            <FilterButton status="ALL" label="All Statuses" />
+            {Object.values(CandidateStatus).map(status => (
+                <FilterButton key={status} status={status} label={status} />
+            ))}
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
         <ul className="divide-y divide-slate-200">
-          {filteredCandidates.map(candidate => (
-            <li key={candidate.id} className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lg font-semibold text-indigo-600">{candidate.name}</p>
-                  <p className="text-sm text-slate-600 font-medium">{candidate.title}</p>
-                  <p className="text-xs text-slate-500 mt-2 max-w-xl">{candidate.summary}</p>
+          {filteredCandidates.length > 0 ? (
+            filteredCandidates.map(candidate => (
+              <li key={candidate.id} className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold text-indigo-600">{candidate.name}</p>
+                    <p className="text-sm text-slate-600 font-medium">{candidate.title}</p>
+                    <p className="text-xs text-slate-500 mt-2 max-w-xl">{candidate.summary}</p>
+                  </div>
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[candidate.status]}`}>{candidate.status}</span>
+                  </div>
                 </div>
-                <div className="text-right ml-4">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[candidate.status]}`}>{candidate.status}</span>
-                </div>
-              </div>
+              </li>
+            ))
+          ) : (
+            <li className="p-6 text-center text-slate-500">
+                No candidates match your search criteria.
             </li>
-          ))}
+          )}
         </ul>
       </div>
     </div>

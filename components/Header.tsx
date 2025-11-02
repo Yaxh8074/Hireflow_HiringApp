@@ -5,6 +5,8 @@ import BriefcaseIcon from './icons/BriefcaseIcon';
 import BuildingOfficeIcon from './icons/BuildingOfficeIcon';
 import ShoppingCartIcon from './icons/ShoppingCartIcon';
 import UsersIcon from './icons/UsersIcon';
+import { useAuth } from '../hooks/useAuth';
+import ArrowRightOnRectangleIcon from './icons/ArrowRightOnRectangleIcon';
 
 interface HeaderProps {
   currentView: View;
@@ -12,6 +14,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => {
+  const { user, logout } = useAuth();
   const navItems: { view: View; label: string, icon: React.ReactNode }[] = [
     { view: 'dashboard', label: 'Dashboard', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
     { view: 'jobs', label: 'All Jobs', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
@@ -35,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => {
 
   return (
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:p-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => onViewChange('dashboard')}>
@@ -52,11 +55,22 @@ const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => {
           </div>
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
+                 <span className="text-sm text-slate-600 mr-4">Welcome, {user?.name}</span>
                 <button
                     onClick={() => onViewChange('company-profile')}
                     className="p-1 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    title="Company Profile"
+                    aria-label="Company Profile"
                     >
                     <BuildingOfficeIcon className="h-6 w-6" />
+                </button>
+                 <button
+                    onClick={logout}
+                    className="p-1 ml-2 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    title="Logout"
+                    aria-label="Logout"
+                    >
+                    <ArrowRightOnRectangleIcon className="h-6 w-6" />
                 </button>
                 <button
                 onClick={() => onViewChange('new-job')}

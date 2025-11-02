@@ -11,8 +11,10 @@ import CandidateDatabase from './components/CandidateDatabase';
 import CompanyProfile from './components/CompanyProfile';
 import { usePaygApi } from './hooks/usePaygApi';
 import type { View, Job } from './types';
+import { useAuth } from './hooks/useAuth';
+import LoginPage from './components/LoginPage';
 
-const App: React.FC = () => {
+const MainAppLayout: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const api = usePaygApi();
@@ -76,6 +78,25 @@ const App: React.FC = () => {
       </main>
     </div>
   );
+};
+
+
+const App: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+     return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+     );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <MainAppLayout />;
 };
 
 export default App;
