@@ -34,15 +34,17 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
     // FIX: Explicitly type `candidate` to resolve type inference issues.
     return Object.values(api.candidates).map((candidate: Candidate) => {
         const candidateApps = api.applications.filter(app => app.candidateId === candidate.id);
-        let mostAdvancedStatus = CandidateStatus.APPLIED;
+        
         if (candidateApps.length > 0) {
-            mostAdvancedStatus = candidateApps.reduce((mostAdvanced, currentApp) => {
+            const mostAdvancedStatus = candidateApps.reduce((mostAdvanced, currentApp) => {
                 return statusOrder.indexOf(currentApp.status) > statusOrder.indexOf(mostAdvanced)
                     ? currentApp.status
                     : mostAdvanced;
             }, candidateApps[0].status);
+            return { ...candidate, displayStatus: mostAdvancedStatus as CandidateStatus | null };
         }
-        return { ...candidate, displayStatus: mostAdvancedStatus };
+        
+        return { ...candidate, displayStatus: null };
     });
   }, [api.candidates, api.applications]);
 
@@ -103,10 +105,10 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
                     <p className="text-xs text-slate-500 mt-2 max-w-xl">{candidate.summary}</p>
                   </div>
                   <div className="text-right ml-4 flex-shrink-0">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[candidate.displayStatus]}`}>
-                        {candidate.displayStatus}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${candidate.displayStatus ? statusColors[candidate.displayStatus] : 'bg-slate-100 text-slate-800'}`}>
+                        {candidate.displayStatus || 'No Applications'}
                     </span>
-                    <p className="text-xs text-slate-400 mt-1">Most Advanced</p>
+                     {candidate.displayStatus && <p className="text-xs text-slate-400 mt-1">Most Advanced</p>}
                   </div>
                 </div>
               </li>
