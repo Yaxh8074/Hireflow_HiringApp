@@ -11,14 +11,11 @@ let isInitialized = false;
  */
 function getAiInstance(): GoogleGenAI | null {
   if (!isInitialized) {
-    // Per instructions, assume process.env.API_KEY is available in the execution environment.
-    // The previous defensive check for `process` is removed. If the environment
-    // is not configured correctly, this will now throw a ReferenceError,
-    // which is the likely cause of the user's "white screen" issue and
-    // makes the problem easier to diagnose.
-    const API_KEY = process.env.API_KEY;
-
-    if (API_KEY) {
+    // In a browser-only environment without a build step (like the user's Netlify deployment),
+    // `process` is not defined. We must check for its existence before trying to access `process.env`.
+    // This prevents a ReferenceError that would cause a blank screen.
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      const API_KEY = process.env.API_KEY;
       try {
         ai = new GoogleGenAI({ apiKey: API_KEY });
       } catch (e) {
@@ -26,7 +23,7 @@ function getAiInstance(): GoogleGenAI | null {
         ai = null;
       }
     } else {
-      console.warn("API_KEY environment variable not set. AI features will be unavailable.");
+      console.warn("`process.env.API_KEY` is not available. AI features will be disabled.");
       ai = null;
     }
     isInitialized = true;
