@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 const AI_UNAVAILABLE_MESSAGE = "AI features are unavailable. The API key has not been configured for this deployment.";
@@ -12,8 +11,12 @@ let isInitialized = false;
  */
 function getAiInstance(): GoogleGenAI | null {
   if (!isInitialized) {
-    // Safely access the API key to prevent 'process is not defined' crash in browser.
-    const API_KEY = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
+    // Per instructions, assume process.env.API_KEY is available in the execution environment.
+    // The previous defensive check for `process` is removed. If the environment
+    // is not configured correctly, this will now throw a ReferenceError,
+    // which is the likely cause of the user's "white screen" issue and
+    // makes the problem easier to diagnose.
+    const API_KEY = process.env.API_KEY;
 
     if (API_KEY) {
       try {
