@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
-import { usePaygApi } from '../../hooks/usePaygApi';
-import CandidateHeader from './CandidateHeader';
-import JobSearch from './JobSearch';
-import MyApplications from './MyApplications';
-import CandidateJobDetail from './CandidateJobDetail';
-import type { CandidateView } from '../../types';
-import CandidateProfile from './CandidateProfile';
+import { usePaygApi } from '../../hooks/usePaygApi.ts';
+import CandidateHeader from './CandidateHeader.tsx';
+import JobSearch from './JobSearch.tsx';
+import MyApplications from './MyApplications.tsx';
+import CandidateJobDetail from './CandidateJobDetail.tsx';
+import type { CandidateView } from '../../types.ts';
+import CandidateProfile from './CandidateProfile.tsx';
 
 const CandidateAppLayout: React.FC = () => {
     const [currentView, setCurrentView] = useState<CandidateView>('job-search');

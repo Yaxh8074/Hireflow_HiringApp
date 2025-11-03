@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import BriefcaseIcon from './icons/BriefcaseIcon';
-import EyeIcon from './icons/EyeIcon';
-import EyeSlashIcon from './icons/EyeSlashIcon';
-import UserGroupIcon from './icons/UserGroupIcon';
-import UsersIcon from './icons/UsersIcon';
+import { useAuth } from '../hooks/useAuth.ts';
+import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
+import EyeIcon from './icons/EyeIcon.tsx';
+import EyeSlashIcon from './icons/EyeSlashIcon.tsx';
+import UserGroupIcon from './icons/UserGroupIcon.tsx';
+import UsersIcon from './icons/UsersIcon.tsx';
 
 const LoginPage: React.FC = () => {
   const [role, setRole] = useState<'hiring-manager' | 'candidate'>('hiring-manager');

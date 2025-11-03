@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Job, Application } from '../../types';
-import type { usePaygApi } from '../../hooks/usePaygApi';
-import { useAuth } from '../../hooks/useAuth';
-import ArrowLeftIcon from '../icons/ArrowLeftIcon';
-import PaperClipIcon from '../icons/PaperClipIcon';
+import type { Job, Application } from '../../types.ts';
+import type { usePaygApi } from '../../hooks/usePaygApi.ts';
+import { useAuth } from '../../hooks/useAuth.ts';
+import ArrowLeftIcon from '../icons/ArrowLeftIcon.tsx';
+import PaperClipIcon from '../icons/PaperClipIcon.tsx';
 
 interface CandidateJobDetailProps {
   jobId: string;

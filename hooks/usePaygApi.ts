@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import type { Job, Candidate, BillingItem, ServiceType, Application, CandidateStatus } from '../types';
+import type { Job, Candidate, BillingItem, ServiceType, Application, CandidateStatus } from '../types.ts';
 import { 
   fetchJobs as apiFetchJobs,
   fetchAllCandidates as apiFetchAllCandidates,
@@ -14,7 +15,7 @@ import {
   withdrawApplication as apiWithdrawApplication,
   isDiscountActive as apiIsDiscountActive,
   getDiscountEndDate as apiGetDiscountEndDate,
-} from '../services/mockApiService';
+} from '../services/mockApiService.ts';
 
 export const usePaygApi = () => {
   const [jobs, setJobs] = useState<Job[]>([]);

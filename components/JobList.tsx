@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 // FIX: Import Application type
-import type { Job, View, Application } from '../types';
-import { JobStatus } from '../types';
-import PlusIcon from './icons/PlusIcon';
+import type { Job, View, Application } from '../types.ts';
+import { JobStatus } from '../types.ts';
+import PlusIcon from './icons/PlusIcon.tsx';
 
 interface JobListProps {
   jobs: Job[];

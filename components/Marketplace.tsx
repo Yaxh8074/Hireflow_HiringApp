@@ -1,8 +1,9 @@
+
 import React from 'react';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import { PRICING } from '../constants';
-import { ServiceType } from '../types';
-import PlusIcon from './icons/PlusIcon';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import { PRICING } from '../constants.ts';
+import { ServiceType } from '../types.ts';
+import PlusIcon from './icons/PlusIcon.tsx';
 
 interface MarketplaceProps {
   api: ReturnType<typeof usePaygApi>;

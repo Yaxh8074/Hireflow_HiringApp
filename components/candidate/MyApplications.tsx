@@ -1,7 +1,8 @@
+
 import React, { useMemo } from 'react';
-import type { usePaygApi } from '../../hooks/usePaygApi';
-import { useAuth } from '../../hooks/useAuth';
-import type { CandidateStatus, Job, Application } from '../../types';
+import type { usePaygApi } from '../../hooks/usePaygApi.ts';
+import { useAuth } from '../../hooks/useAuth.ts';
+import type { CandidateStatus, Job, Application } from '../../types.ts';
 
 interface MyApplicationsProps {
   api: ReturnType<typeof usePaygApi>;

@@ -1,12 +1,12 @@
 
 import React from 'react';
-import type { View } from '../types';
-import BriefcaseIcon from './icons/BriefcaseIcon';
-import BuildingOfficeIcon from './icons/BuildingOfficeIcon';
-import ShoppingCartIcon from './icons/ShoppingCartIcon';
-import UsersIcon from './icons/UsersIcon';
-import { useAuth } from '../hooks/useAuth';
-import ArrowRightOnRectangleIcon from './icons/ArrowRightOnRectangleIcon';
+import type { View } from '../types.ts';
+import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
+import BuildingOfficeIcon from './icons/BuildingOfficeIcon.tsx';
+import ShoppingCartIcon from './icons/ShoppingCartIcon.tsx';
+import UsersIcon from './icons/UsersIcon.tsx';
+import { useAuth } from '../hooks/useAuth.ts';
+import ArrowRightOnRectangleIcon from './icons/ArrowRightOnRectangleIcon.tsx';
 
 interface HeaderProps {
   currentView: View;

@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import Dashboard from './components/Dashboard';
-import JobList from './components/JobList';
-import JobDetail from './components/JobDetail';
-import JobPostForm from './components/JobPostForm';
-import BillingSummary from './components/BillingSummary';
-import Marketplace from './components/Marketplace';
-import CandidateDatabase from './components/CandidateDatabase';
-import CompanyProfile from './components/CompanyProfile';
-import { usePaygApi } from './hooks/usePaygApi';
-import type { View, Job } from './types';
-import { useAuth } from './hooks/useAuth';
-import LoginPage from './components/LoginPage';
-import CandidateAppLayout from './components/candidate/CandidateAppLayout';
+import Header from './components/Header.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import JobList from './components/JobList.tsx';
+import JobDetail from './components/JobDetail.tsx';
+import JobPostForm from './components/JobPostForm.tsx';
+import BillingSummary from './components/BillingSummary.tsx';
+import Marketplace from './components/Marketplace.tsx';
+import CandidateDatabase from './components/CandidateDatabase.tsx';
+import CompanyProfile from './components/CompanyProfile.tsx';
+import { usePaygApi } from './hooks/usePaygApi.ts';
+import type { View, Job } from './types.ts';
+import { useAuth } from './hooks/useAuth.ts';
+import LoginPage from './components/LoginPage.tsx';
+import CandidateAppLayout from './components/candidate/CandidateAppLayout.tsx';
 
 
 const MainAppLayout: React.FC = () => {

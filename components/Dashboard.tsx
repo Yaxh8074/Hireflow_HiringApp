@@ -1,10 +1,11 @@
+
 import React from 'react';
-import type { Job, View, ServiceType, Candidate, Application } from '../types';
-import { CandidateStatus, JobStatus } from '../types';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import BriefcaseIcon from './icons/BriefcaseIcon';
-import UserGroupIcon from './icons/UserGroupIcon';
-import CurrencyDollarIcon from './icons/CurrencyDollarIcon';
+import type { Job, View, ServiceType, Candidate, Application } from '../types.ts';
+import { CandidateStatus, JobStatus } from '../types.ts';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
+import UserGroupIcon from './icons/UserGroupIcon.tsx';
+import CurrencyDollarIcon from './icons/CurrencyDollarIcon.tsx';
 
 interface DashboardProps {
   api: ReturnType<typeof usePaygApi>;

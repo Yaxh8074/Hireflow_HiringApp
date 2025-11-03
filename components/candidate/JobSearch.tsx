@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
-import type { usePaygApi } from '../../hooks/usePaygApi';
-import { JobStatus } from '../../types';
+import type { usePaygApi } from '../../hooks/usePaygApi.ts';
+import { JobStatus } from '../../types.ts';
 
 interface JobSearchProps {
   api: ReturnType<typeof usePaygApi>;

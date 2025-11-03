@@ -1,6 +1,7 @@
+
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { fetchAllCandidates } from '../services/mockApiService';
-import type { User, Candidate } from '../types';
+import { fetchAllCandidates } from '../services/mockApiService.ts';
+import type { User, Candidate } from '../types.ts';
 
 interface AuthContextType {
   user: User | null;

@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
-import type { Job } from '../types';
-import { JobStatus } from '../types';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import { generateJobDescription } from '../services/geminiService';
-import SparklesIcon from './icons/SparklesIcon';
-import PlusIcon from './icons/PlusIcon';
+import type { Job } from '../types.ts';
+import { JobStatus } from '../types.ts';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import { generateJobDescription } from '../services/geminiService.ts';
+import SparklesIcon from './icons/SparklesIcon.tsx';
+import PlusIcon from './icons/PlusIcon.tsx';
 
 interface JobPostFormProps {
   api: ReturnType<typeof usePaygApi>;

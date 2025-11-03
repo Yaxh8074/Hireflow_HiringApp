@@ -1,6 +1,7 @@
-import type { Job, Candidate, BillingItem, Company, Application } from '../types';
-import { ServiceType, CandidateStatus, BackgroundCheckStatus, JobStatus } from '../types';
-import { PRICING } from '../constants';
+
+import type { Job, Candidate, BillingItem, Company, Application } from '../types.ts';
+import { ServiceType, CandidateStatus, BackgroundCheckStatus, JobStatus } from '../types.ts';
+import { PRICING } from '../constants.ts';
 
 // --- DISCOUNT LOGIC ---
 const DISCOUNT_START_DATE_KEY = 'payg_discount_start_date';

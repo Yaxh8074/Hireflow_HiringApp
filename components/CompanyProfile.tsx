@@ -1,6 +1,6 @@
 
 import React from 'react';
-import BuildingOfficeIcon from './icons/BuildingOfficeIcon';
+import BuildingOfficeIcon from './icons/BuildingOfficeIcon.tsx';
 
 const CompanyProfile: React.FC = () => {
   return (

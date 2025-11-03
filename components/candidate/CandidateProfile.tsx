@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import type { usePaygApi } from '../../hooks/usePaygApi';
-import { useAuth } from '../../hooks/useAuth';
-import type { Candidate } from '../../types';
-import PaperClipIcon from '../icons/PaperClipIcon';
+import type { usePaygApi } from '../../hooks/usePaygApi.ts';
+import { useAuth } from '../../hooks/useAuth.ts';
+import type { Candidate } from '../../types.ts';
+import PaperClipIcon from '../icons/PaperClipIcon.tsx';
 
 interface CandidateProfileProps {
     api: ReturnType<typeof usePaygApi>;

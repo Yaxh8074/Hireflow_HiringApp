@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import type { Candidate, Job, Application } from '../types';
-import { CandidateStatus, BackgroundCheckStatus, ServiceType } from '../types';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import { screenCandidate } from '../services/geminiService';
-import SparklesIcon from './icons/SparklesIcon';
-import EnvelopeIcon from './icons/EnvelopeIcon';
-import PhoneIcon from './icons/PhoneIcon';
-import ShieldCheckIcon from './icons/ShieldCheckIcon';
-import EllipsisVerticalIcon from './icons/EllipsisVerticalIcon';
+import type { Candidate, Job, Application } from '../types.ts';
+import { CandidateStatus, BackgroundCheckStatus, ServiceType } from '../types.ts';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import { screenCandidate } from '../services/geminiService.ts';
+import SparklesIcon from './icons/SparklesIcon.tsx';
+import EnvelopeIcon from './icons/EnvelopeIcon.tsx';
+import PhoneIcon from './icons/PhoneIcon.tsx';
+import ShieldCheckIcon from './icons/ShieldCheckIcon.tsx';
+import EllipsisVerticalIcon from './icons/EllipsisVerticalIcon.tsx';
 
 interface CandidateCardProps {
   candidate: Candidate;

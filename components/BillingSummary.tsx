@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { BillingItem } from '../types';
+import type { BillingItem } from '../types.ts';
 
 interface BillingSummaryProps {
   billingItems: BillingItem[];

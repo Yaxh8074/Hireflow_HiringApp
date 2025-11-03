@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import type { Candidate } from '../types';
-import { CandidateStatus } from '../types';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import type { Candidate } from '../types.ts';
+import { CandidateStatus } from '../types.ts';
 
 interface CandidateDatabaseProps {
   api: ReturnType<typeof usePaygApi>;

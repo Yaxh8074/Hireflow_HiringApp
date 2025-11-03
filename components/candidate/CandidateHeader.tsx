@@ -1,9 +1,10 @@
+
 import React from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import ArrowRightOnRectangleIcon from '../icons/ArrowRightOnRectangleIcon';
-import BriefcaseIcon from '../icons/BriefcaseIcon';
-import type { CandidateView } from '../../types';
-import UserCircleIcon from '../icons/UserCircleIcon';
+import { useAuth } from '../../hooks/useAuth.ts';
+import ArrowRightOnRectangleIcon from '../icons/ArrowRightOnRectangleIcon.tsx';
+import BriefcaseIcon from '../icons/BriefcaseIcon.tsx';
+import type { CandidateView } from '../../types.ts';
+import UserCircleIcon from '../icons/UserCircleIcon.tsx';
 
 interface CandidateHeaderProps {
   currentView: CandidateView;

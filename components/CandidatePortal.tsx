@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Import Application type
-import type { Candidate, Job, Application } from '../types';
-import { CandidateStatus } from '../types';
-import { usePaygApi } from '../hooks/usePaygApi';
-import BriefcaseIcon from './icons/BriefcaseIcon';
-import CheckCircleIcon from './icons/CheckCircleIcon';
+import type { Candidate, Job, Application } from '../types.ts';
+import { CandidateStatus } from '../types.ts';
+import { usePaygApi } from '../hooks/usePaygApi.ts';
+import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
+import CheckCircleIcon from './icons/CheckCircleIcon.tsx';
 
 interface CandidatePortalProps {
     candidateId: string;

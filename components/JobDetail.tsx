@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Job, Candidate, Application } from '../types';
-import { JobStatus } from '../types';
-import type { usePaygApi } from '../hooks/usePaygApi';
-import CandidateCard from './CandidateCard';
-import ArrowLeftIcon from './icons/ArrowLeftIcon';
-import PaperAirplaneIcon from './icons/PaperAirplaneIcon';
-import ArchiveBoxXMarkIcon from './icons/ArchiveBoxXMarkIcon';
+import type { Job, Candidate, Application } from '../types.ts';
+import { JobStatus } from '../types.ts';
+import type { usePaygApi } from '../hooks/usePaygApi.ts';
+import CandidateCard from './CandidateCard.tsx';
+import ArrowLeftIcon from './icons/ArrowLeftIcon.tsx';
+import PaperAirplaneIcon from './icons/PaperAirplaneIcon.tsx';
+import ArchiveBoxXMarkIcon from './icons/ArchiveBoxXMarkIcon.tsx';
 
 interface JobDetailProps {
   jobId: string;
