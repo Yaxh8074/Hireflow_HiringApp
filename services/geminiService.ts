@@ -11,19 +11,19 @@ let isInitialized = false;
  */
 function getAiInstance(): GoogleGenAI | null {
   if (!isInitialized) {
-    // In a browser-only environment without a build step (like the user's Netlify deployment),
-    // `process` is not defined. We must check for its existence before trying to access `process.env`.
-    // This prevents a ReferenceError that would cause a blank screen.
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    // A try-catch block is the most robust way to handle environment variables
+    // that may not exist in a browser environment (like on Netlify).
+    // This will catch the ReferenceError if `process` is not defined.
+    try {
       const API_KEY = process.env.API_KEY;
-      try {
+      if (API_KEY) {
         ai = new GoogleGenAI({ apiKey: API_KEY });
-      } catch (e) {
-        console.error("Failed to initialize GoogleGenAI:", e);
-        ai = null;
+      } else {
+        // This handles cases where `process.env` exists but the key is missing.
+        throw new Error("API_KEY is not defined.");
       }
-    } else {
-      console.warn("`process.env.API_KEY` is not available. AI features will be disabled.");
+    } catch (e) {
+      console.warn("AI features are disabled. Could not initialize GoogleGenAI. This is expected if an API key is not configured for the deployment.");
       ai = null;
     }
     isInitialized = true;
