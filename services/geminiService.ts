@@ -15,15 +15,21 @@ function getAiInstance(): GoogleGenAI | null {
     // that may not exist in a browser environment (like on Netlify).
     // This will catch the ReferenceError if `process` is not defined.
     try {
-      const API_KEY = process.env.API_KEY;
+      // Accessing the key via a dynamically created string to prevent
+      // the Vite build process from replacing it with the raw key value.
+      // This ensures the key is read from the runtime environment,
+      // preventing it from being exposed in the bundled source code.
+      const keyName = ['A', 'P', 'I', '_', 'K', 'E', 'Y'].join('');
+      const API_KEY = process.env[keyName];
+
       if (API_KEY) {
         ai = new GoogleGenAI({ apiKey: API_KEY });
       } else {
         // This handles cases where `process.env` exists but the key is missing.
-        throw new Error("API_KEY is not defined.");
+        throw new Error("API_KEY is not defined in the runtime environment.");
       }
     } catch (e) {
-      console.warn("AI features are disabled. Could not initialize GoogleGenAI. This is expected if an API key is not configured for the deployment.");
+      console.warn("AI features are disabled. Could not initialize GoogleGenAI. This is expected if an API key is not configured for the deployment or `process` is not defined.");
       ai = null;
     }
     isInitialized = true;
