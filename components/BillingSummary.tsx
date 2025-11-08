@@ -23,8 +23,8 @@ const BillingSummary: React.FC<BillingSummaryProps> = ({ billingItems }) => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-slate-900 mb-1">Billing Summary</h1>
-      <p className="text-slate-500 mb-6">A detailed breakdown of all charges on your account.</p>
+      <h1 className="text-3xl font-bold text-slate-900 mb-1">Payment History</h1>
+      <p className="text-slate-500 mb-6">A detailed history of all successful payments on your account.</p>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">

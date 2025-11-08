@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { fetchAllCandidates } from '../services/mockApiService.ts';
+import { fetchAllCandidates, createUser as apiCreateUser } from '../services/mockApiService.ts';
 import type { User, Candidate } from '../types.ts';
 
 interface AuthContextType {
@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string, pass: string, rememberMe: boolean, role: 'hiring-manager' | 'candidate') => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  signup: (name: string, email: string, pass: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,6 +78,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  const signup = async (name: string, email: string, pass: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+        // Password is not used in mock service, but would be in a real app
+        const newUser = await apiCreateUser(name, email, 'candidate');
+        
+        // Automatically log the user in upon successful registration
+        sessionStorage.setItem('authUser', JSON.stringify(newUser));
+        setUser(newUser);
+    } catch (error) {
+        // Re-throw the error to be caught and displayed in the UI component
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     sessionStorage.removeItem('authUser');
     localStorage.removeItem('authUser');
@@ -84,7 +102,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, signup }}>
       {children}
     </AuthContext.Provider>
   );

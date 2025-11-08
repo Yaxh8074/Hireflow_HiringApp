@@ -7,7 +7,11 @@ import EyeSlashIcon from './icons/EyeSlashIcon.tsx';
 import UserGroupIcon from './icons/UserGroupIcon.tsx';
 import UsersIcon from './icons/UsersIcon.tsx';
 
-const LoginPage: React.FC = () => {
+interface LoginPageProps {
+    onSwitchToSignUp: () => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignUp }) => {
   const [role, setRole] = useState<'hiring-manager' | 'candidate'>('hiring-manager');
   const [email, setEmail] = useState('hiring.manager@innovate.com');
   const [password, setPassword] = useState('password123');
@@ -143,6 +147,14 @@ const LoginPage: React.FC = () => {
                 </button>
             </div>
             </form>
+            <div className="mt-6 text-center text-sm">
+                <p className="text-slate-500">
+                    Don't have an account?{' '}
+                    <button onClick={onSwitchToSignUp} className="font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none">
+                        Sign up
+                    </button>
+                </p>
+            </div>
         </div>
 
          <div className="mt-4 p-4 bg-slate-100 border border-slate-200 rounded-lg text-center text-xs text-slate-500">

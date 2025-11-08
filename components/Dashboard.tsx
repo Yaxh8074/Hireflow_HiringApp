@@ -50,11 +50,10 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
     return acc;
   }, {} as Record<string, Application[]>);
 
-  // FIX: Explicitly type the initial value for the accumulator to resolve type inference issues with reduce.
   const costBreakdown = api.billingItems.reduce((acc: Record<string, number>, item) => {
     acc[item.service] = (acc[item.service] || 0) + item.amount;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -136,7 +135,6 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
                 {Object.entries(costBreakdown).map(([service, amount]) => (
                     <li key={service} className="flex justify-between items-center text-sm">
                         <span className="text-slate-600">{service}</span>
-                        {/* FIX: Cast `amount` to number as TypeScript may infer it as 'unknown' from Object.entries. */}
                         <span className="font-medium text-slate-800">{formatCurrency(amount as number)}</span>
                     </li>
                 ))}

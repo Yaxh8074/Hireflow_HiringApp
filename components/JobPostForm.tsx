@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import type { Job } from '../types.ts';
-import { JobStatus } from '../types.ts';
+import { JobStatus, ServiceType } from '../types.ts';
 import type { usePaygApi } from '../hooks/usePaygApi.ts';
 import { generateJobDescription } from '../services/geminiService.ts';
 import SparklesIcon from './icons/SparklesIcon.tsx';
 import PlusIcon from './icons/PlusIcon.tsx';
+import { usePayments } from '../contexts/PaymentContext.tsx';
 
 interface JobPostFormProps {
   api: ReturnType<typeof usePaygApi>;
@@ -19,6 +20,7 @@ const JobPostForm: React.FC<JobPostFormProps> = ({ api, onJobPosted }) => {
   const [keywords, setKeywords] = useState('');
   const [description, setDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const { triggerPayment } = usePayments();
 
   const handleGenerateDescription = async () => {
     if (!title || !keywords) {
@@ -36,9 +38,30 @@ const JobPostForm: React.FC<JobPostFormProps> = ({ api, onJobPosted }) => {
       alert('Please fill all required fields.');
       return;
     }
-    const newJob = await api.postJob({ title, location, salary, description, status });
-    if(newJob) {
-      onJobPosted(newJob);
+
+    const jobData = { title, location, salary, description, status };
+
+    if (status === JobStatus.ACTIVE) {
+      // Trigger payment flow for publishing
+      triggerPayment(
+        {
+          service: ServiceType.JOB_POST,
+          description: `Job Post: ${title}`,
+        },
+        async () => {
+          const newJob = await api.postJob(jobData);
+          if (newJob) {
+            await api.addBillingCharge(ServiceType.JOB_POST, `Job Post: ${title}`);
+            onJobPosted(newJob);
+          }
+        }
+      );
+    } else {
+      // Just save as draft, no charge
+      const newJob = await api.postJob(jobData);
+      if (newJob) {
+        onJobPosted(newJob);
+      }
     }
   };
 
@@ -46,7 +69,7 @@ const JobPostForm: React.FC<JobPostFormProps> = ({ api, onJobPosted }) => {
     <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-slate-900 mb-1">Create a New Job Post</h1>
         <p className="text-slate-500 mb-6">
-            Fill in the details below. Publishing a job will incur a one-time posting fee.
+            Fill in the details below. Publishing a job will require payment for the posting fee.
             {api.isDiscountActive && <span className="block font-semibold text-indigo-600">Your 90% new member discount will be applied!</span>}
         </p>
 

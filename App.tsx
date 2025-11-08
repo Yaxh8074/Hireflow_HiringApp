@@ -14,6 +14,8 @@ import type { View, Job } from './types.ts';
 import { useAuth } from './hooks/useAuth.ts';
 import LoginPage from './components/LoginPage.tsx';
 import CandidateAppLayout from './components/candidate/CandidateAppLayout.tsx';
+import { PaymentProvider } from './contexts/PaymentContext.tsx';
+import SignUpPage from './components/SignUpPage.tsx';
 
 
 const MainAppLayout: React.FC = () => {
@@ -87,6 +89,7 @@ const MainAppLayout: React.FC = () => {
 
 const App: React.FC = () => {
   const { user, isLoading } = useAuth();
+  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
   if (isLoading) {
      return (
@@ -97,7 +100,10 @@ const App: React.FC = () => {
   }
 
   if (!user) {
-    return <LoginPage />;
+    if (authView === 'login') {
+      return <LoginPage onSwitchToSignUp={() => setAuthView('signup')} />;
+    }
+    return <SignUpPage onSwitchToLogin={() => setAuthView('login')} />;
   }
 
   if (user.role === 'candidate') {
@@ -105,11 +111,15 @@ const App: React.FC = () => {
   }
   
   if (user.role === 'hiring-manager') {
-    return <MainAppLayout />;
+    return (
+        <PaymentProvider>
+            <MainAppLayout />
+        </PaymentProvider>
+    );
   }
 
   // Fallback in case of an unknown role
-  return <LoginPage />;
+  return <LoginPage onSwitchToSignUp={() => setAuthView('signup')} />;
 };
 
 export default App;

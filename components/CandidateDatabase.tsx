@@ -31,7 +31,6 @@ const CandidateDatabase: React.FC<CandidateDatabaseProps> = ({ api }) => {
   const [statusFilter, setStatusFilter] = useState<CandidateStatus | 'ALL'>('ALL');
   
   const allCandidatesWithStatus = useMemo(() => {
-    // FIX: Explicitly type `candidate` to resolve type inference issues.
     return Object.values(api.candidates).map((candidate: Candidate) => {
         const candidateApps = api.applications.filter(app => app.candidateId === candidate.id);
         

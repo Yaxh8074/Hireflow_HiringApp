@@ -1,12 +1,17 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Job, Candidate, Application } from '../types.ts';
-import { JobStatus } from '../types.ts';
+import { JobStatus, ServiceType, CandidateStatus } from '../types.ts';
 import type { usePaygApi } from '../hooks/usePaygApi.ts';
 import CandidateCard from './CandidateCard.tsx';
+import KanbanBoard from './KanbanBoard.tsx';
 import ArrowLeftIcon from './icons/ArrowLeftIcon.tsx';
 import PaperAirplaneIcon from './icons/PaperAirplaneIcon.tsx';
 import ArchiveBoxXMarkIcon from './icons/ArchiveBoxXMarkIcon.tsx';
+import { usePayments } from '../contexts/PaymentContext.tsx';
+import ViewColumnsIcon from './icons/ViewColumnsIcon.tsx';
+import ListBulletIcon from './icons/ListBulletIcon.tsx';
+
 
 interface JobDetailProps {
   jobId: string;
@@ -20,15 +25,17 @@ const statusColors: Record<JobStatus, string> = {
     [JobStatus.CLOSED]: 'bg-slate-100 text-slate-800',
 }
 
-interface CandidateWithApplication {
+export interface CandidateWithApplication {
     candidate: Candidate;
     application: Application;
 }
 
 const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
   const job = useMemo(() => api.jobs.find(j => j.id === jobId), [jobId, api.jobs]);
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const { triggerPayment } = usePayments();
   
-  const candidatesForJob = useMemo(() => {
+  const candidatesForJob = useMemo((): CandidateWithApplication[] => {
     if (!job) return [];
     return api.applications
       .filter(app => app.jobId === job.id)
@@ -41,9 +48,17 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
 
 
   const handlePublish = () => {
-    const confirmationMessage = `Are you sure you want to publish this job? This will incur a job posting fee. ${api.isDiscountActive ? 'Your 90% new member discount will be applied.' : ''}`;
-    if (job && window.confirm(confirmationMessage)) {
-      api.updateJob(job.id, { status: JobStatus.ACTIVE });
+    if (job) {
+      triggerPayment(
+        {
+          service: ServiceType.JOB_POST,
+          description: `Job Post: ${job.title}`,
+        },
+        async () => {
+          await api.updateJob(job.id, { status: JobStatus.ACTIVE });
+          await api.addBillingCharge(ServiceType.JOB_POST, `Job Post: ${job.title}`);
+        }
+      );
     }
   };
 
@@ -56,6 +71,8 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
 
   if (api.isLoading && !job) return <div>Loading...</div>;
   if (!job) return <div>Job not found.</div>;
+  
+  const activeCandidates = candidatesForJob.filter(c => c.application.status !== CandidateStatus.WITHDRAWN);
 
   return (
     <div className="space-y-6">
@@ -93,15 +110,30 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, api, onBack }) => {
             <p className="text-slate-600 whitespace-pre-wrap">{job.description}</p>
         </div>
         <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Candidates ({candidatesForJob.length})</h2>
-            {candidatesForJob.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {candidatesForJob.map(({ candidate, application }) => (
-                        <CandidateCard key={candidate.id} candidate={candidate} job={job} application={application} api={api} />
-                    ))}
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-slate-900">Candidates ({activeCandidates.length})</h2>
+                 <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
+                    <button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md ${viewMode === 'board' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+                        <ViewColumnsIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+                       <ListBulletIcon className="h-5 w-5" />
+                    </button>
                 </div>
+            </div>
+
+            {activeCandidates.length > 0 ? (
+                viewMode === 'board' ? (
+                    <KanbanBoard candidatesWithApps={activeCandidates} api={api} job={job} />
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {activeCandidates.map(({ candidate, application }) => (
+                            <CandidateCard key={candidate.id} candidate={candidate} job={job} application={application} api={api} />
+                        ))}
+                    </div>
+                )
             ) : (
-                <p className="text-slate-500 text-center py-8">No candidates have applied for this job yet.</p>
+                <p className="text-slate-500 text-center py-8 bg-slate-50 rounded-lg">No active candidates have applied for this job yet.</p>
             )}
         </div>
     </div>

@@ -9,6 +9,8 @@ import EnvelopeIcon from './icons/EnvelopeIcon.tsx';
 import PhoneIcon from './icons/PhoneIcon.tsx';
 import ShieldCheckIcon from './icons/ShieldCheckIcon.tsx';
 import EllipsisVerticalIcon from './icons/EllipsisVerticalIcon.tsx';
+import LinkIcon from './icons/LinkIcon.tsx';
+import { usePayments } from '../contexts/PaymentContext.tsx';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -39,11 +41,14 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [showResume, setShowResume] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
-  const { updateCandidateProfile, updateApplicationState, addBillingCharge, isDiscountActive } = api;
+  const { updateCandidateProfile, updateApplicationState, addBillingCharge } = api;
+  const { triggerPayment } = usePayments();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // FIX: Corrected typo from actionsMenu_current to actionsMenuRef.current
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
         setIsActionsOpen(false);
       }
@@ -54,43 +59,61 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
     };
   }, [actionsMenuRef]);
 
-  const getConfirmationMessage = (baseMessage: string) => {
-    return `${baseMessage} ${isDiscountActive ? 'Your 90% new member discount will be applied.' : ''}`;
-  }
-
   const handleHire = () => {
-    if(window.confirm(getConfirmationMessage(`Are you sure you want to hire ${candidate.name}? This will incur a successful hire fee.`))) {
-      updateApplicationState(application.id, { status: CandidateStatus.HIRED });
-      addBillingCharge(ServiceType.SUCCESSFUL_HIRE, `Successful Hire: ${candidate.name} for ${job.title}`);
-    }
+    triggerPayment(
+      {
+        service: ServiceType.SUCCESSFUL_HIRE,
+        description: `Successful Hire: ${candidate.name} for ${job.title}`,
+      },
+      async () => {
+        await updateApplicationState(application.id, { status: CandidateStatus.HIRED });
+        await addBillingCharge(ServiceType.SUCCESSFUL_HIRE, `Successful Hire: ${candidate.name} for ${job.title}`);
+      }
+    );
   };
 
   const handleBackgroundCheck = () => {
-    if(window.confirm(getConfirmationMessage(`Order a background check for ${candidate.name}? This will incur a fee.`))) {
-      updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.PENDING });
-      addBillingCharge(ServiceType.BACKGROUND_CHECK, `Background Check for ${candidate.name}`);
-      // Simulate completion
-      setTimeout(() => {
-        updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.COMPLETED });
-      }, 5000);
-    }
+    triggerPayment(
+      {
+        service: ServiceType.BACKGROUND_CHECK,
+        description: `Background Check for ${candidate.name}`,
+      },
+      async () => {
+        await addBillingCharge(ServiceType.BACKGROUND_CHECK, `Background Check for ${candidate.name}`);
+        await updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.PENDING });
+        // Simulate completion
+        setTimeout(() => {
+          updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.COMPLETED });
+        }, 5000);
+      }
+    );
   };
 
   const handleAiScreening = async () => {
-    if(window.confirm(getConfirmationMessage(`Perform an AI screening for ${candidate.name}? This will incur a small fee.`))) {
-      setIsScreening(true);
-      addBillingCharge(ServiceType.AI_SCREENING, `AI Screening for ${candidate.name}`);
-      const result = await screenCandidate(job.description, candidate.summary);
-      updateCandidateProfile(candidate.id, { aiScreeningResult: result });
-      setIsScreening(false);
-    }
+    triggerPayment(
+      {
+        service: ServiceType.AI_SCREENING,
+        description: `AI Screening for ${candidate.name}`,
+      },
+      async () => {
+        await addBillingCharge(ServiceType.AI_SCREENING, `AI Screening for ${candidate.name}`);
+        setIsScreening(true);
+        const result = await screenCandidate(job.description, candidate.summary);
+        await updateCandidateProfile(candidate.id, { aiScreeningResult: result });
+        setIsScreening(false);
+      }
+    );
   };
   
   const handleAddOnService = (service: ServiceType) => {
     const serviceName = service.toString();
-    if(window.confirm(getConfirmationMessage(`Purchase "${serviceName}" for ${candidate.name}? This will incur a fee.`))) {
-        addBillingCharge(service, `${serviceName} for ${candidate.name}`);
-    }
+    triggerPayment(
+      {
+        service: service,
+        description: `${serviceName} for ${candidate.name}`,
+      },
+      () => addBillingCharge(service, `${serviceName} for ${candidate.name}`)
+    );
   }
   
   const handleSaveNotes = async () => {
@@ -99,11 +122,36 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
     setIsSavingNotes(false);
   }
 
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/status/${application.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+        setLinkCopied(true);
+        setTimeout(() => {
+            setLinkCopied(false);
+            setIsActionsOpen(false);
+        }, 2000);
+    });
+  }
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('applicationId', application.id);
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+  }
+
   const isHired = application.status === CandidateStatus.HIRED;
   const isWithdrawn = application.status === CandidateStatus.WITHDRAWN;
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 p-5 flex flex-col justify-between ${isWithdrawn ? 'opacity-60' : ''}`}>
+    <div 
+        draggable={!isWithdrawn}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        className={`bg-white rounded-lg shadow-sm border border-slate-200 p-5 flex flex-col justify-between transition-all duration-200 ease-in-out hover:shadow-md hover:border-indigo-200 ${isWithdrawn ? 'opacity-60' : 'cursor-grab active:cursor-grabbing'}`}
+    >
       <div>
         <div className="flex justify-between items-start">
             <h3 className="text-lg font-bold text-slate-900">{candidate.name}</h3>
@@ -206,8 +254,12 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
                 <EllipsisVerticalIcon className="h-5 w-5" />
               </button>
               {isActionsOpen && (
-                <div className="origin-top-right absolute right-0 bottom-full mb-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="origin-top-right absolute right-0 bottom-full mb-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                   <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                    <button onClick={handleCopyLink} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                        <LinkIcon className="h-4 w-4 mr-3" />
+                        {linkCopied ? 'Copied!' : 'Copy Status Link'}
+                    </button>
                     {!candidate.aiScreeningResult && (
                       <button onClick={() => { handleAiScreening(); setIsActionsOpen(false); }} disabled={isScreening || api.isLoading} className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
                         {isScreening ? 'Screening...' : 'AI Screen'}

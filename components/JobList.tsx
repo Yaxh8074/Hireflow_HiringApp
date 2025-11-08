@@ -1,13 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-// FIX: Import Application type
 import type { Job, View, Application } from '../types.ts';
 import { JobStatus } from '../types.ts';
 import PlusIcon from './icons/PlusIcon.tsx';
 
 interface JobListProps {
   jobs: Job[];
-  // FIX: Add applications to props to calculate candidate count
   applications: Application[];
   onSelectJob: (jobId: string) => void;
   onViewChange: (view: View) => void;
@@ -19,12 +17,10 @@ const statusColors: Record<JobStatus, string> = {
     [JobStatus.CLOSED]: 'bg-slate-100 text-slate-800',
 }
 
-// FIX: Accept applications in props
 const JobList: React.FC<JobListProps> = ({ jobs, applications, onSelectJob, onViewChange }) => {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // FIX: Calculate candidates per job from applications array
   const applicationsByJob = useMemo(() => {
     return applications.reduce((acc, app) => {
       if (!acc[app.jobId]) {
@@ -106,7 +102,6 @@ const JobList: React.FC<JobListProps> = ({ jobs, applications, onSelectJob, onVi
                             </div>
                             <div className="text-right flex-shrink-0 ml-4">
                                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[job.status]}`}>{job.status}</span>
-                                {/* FIX: Property 'candidateIds' does not exist on type 'Job'. Use applicationsByJob to get the count. */}
                                 <p className="text-sm text-slate-500 mt-2">{applicationsByJob[job.id]?.length || 0} Candidates</p>
                             </div>
                         </div>

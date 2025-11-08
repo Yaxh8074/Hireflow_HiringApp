@@ -1,5 +1,5 @@
 
-import type { Job, Candidate, BillingItem, Company, Application } from '../types.ts';
+import type { Job, Candidate, BillingItem, Company, Application, User } from '../types.ts';
 import { ServiceType, CandidateStatus, BackgroundCheckStatus, JobStatus } from '../types.ts';
 import { PRICING } from '../constants.ts';
 
@@ -236,9 +236,6 @@ export const createJob = async (jobData: Omit<Job, 'id' | 'createdAt'>): Promise
         createdAt: new Date().toISOString(),
     };
     MOCK_JOBS.unshift(newJob);
-    if (newJob.status === JobStatus.ACTIVE) {
-        await addBillingItem(ServiceType.JOB_POST, `Job Post: ${newJob.title}`);
-    }
     return simulateDelay(newJob);
 }
 
@@ -262,11 +259,6 @@ export const updateJob = async (id: string, updates: Partial<Job>): Promise<Job>
     if (!updatedJobResult) {
         // This case should not be reachable if originalJob was found, but it's a good safeguard.
         return Promise.reject(new Error('Job not found during update'));
-    }
-
-    // Handle billing side-effect
-    if (originalJob.status === JobStatus.DRAFT && updatedJobResult.status === JobStatus.ACTIVE) {
-        await addBillingItem(ServiceType.JOB_POST, `Job Post: ${updatedJobResult.title}`);
     }
 
     return simulateDelay(updatedJobResult);
@@ -336,3 +328,36 @@ export const withdrawApplication = (applicationId: string): Promise<Application>
     MOCK_APPLICATIONS[appIndex] = updatedApplication;
     return simulateDelay(updatedApplication);
 }
+
+export const createUser = async (name: string, email: string, role: 'candidate'): Promise<User> => {
+    if (role !== 'candidate') {
+        return Promise.reject(new Error('Sign up is only available for candidates.'));
+    }
+
+    const existingCandidate = Object.values(MOCK_CANDIDATES).find(c => c.email.toLowerCase() === email.toLowerCase());
+    if (existingCandidate) {
+        return Promise.reject(new Error('An account with this email already exists.'));
+    }
+
+    const newCandidateId = generateId('c');
+    const newCandidate: Candidate = {
+        id: newCandidateId,
+        name,
+        email,
+        title: 'Aspiring Professional',
+        summary: 'Newly registered candidate.',
+        phone: '',
+        location: '',
+        resumeText: '',
+        backgroundCheck: BackgroundCheckStatus.NOT_STARTED,
+    };
+    MOCK_CANDIDATES[newCandidateId] = newCandidate;
+
+    const newUser: User = {
+        id: newCandidateId,
+        name,
+        email,
+        role: 'candidate'
+    };
+    return simulateDelay(newUser);
+};

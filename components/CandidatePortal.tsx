@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Import Application type
 import type { Candidate, Job, Application } from '../types.ts';
 import { CandidateStatus } from '../types.ts';
 import { usePaygApi } from '../hooks/usePaygApi.ts';
@@ -32,12 +31,9 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
     const api = usePaygApi();
     const [candidate, setCandidate] = useState<Candidate | null>(null);
     const [job, setJob] = useState<Job | null>(null);
-    // FIX: Add state for the application to derive status from it
     const [application, setApplication] = useState<Application | null>(null);
 
     useEffect(() => {
-        // FIX: Reworked logic to find the latest application for a candidate, then find the corresponding job.
-        // The original logic incorrectly tried to find a job by `candidateIds` which does not exist on the Job type.
         if (api.candidates && api.jobs.length > 0 && api.applications.length > 0) {
             const foundCandidate = api.candidates[candidateId] || null;
             setCandidate(foundCandidate);
@@ -62,15 +58,12 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
     }, [candidateId, api.candidates, api.jobs, api.applications]);
 
     const handleWithdraw = () => {
-        // FIX: Correctly call `withdrawApplication` from the API with the application ID.
-        // The original `updateCandidateState` method does not exist, and status belongs to the application, not the candidate.
         if(application && window.confirm("Are you sure you want to withdraw your application? This action cannot be undone.")) {
             api.withdrawApplication(application.id);
         }
     }
     
     const currentStageIndex = useMemo(() => {
-        // FIX: Get status from the application object, not the candidate object.
         if (!application) return -1;
         return applicationStages.indexOf(application.status);
     }, [application]);
@@ -84,7 +77,6 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
          );
     }
     
-    // FIX: Check for application as well.
     if (!candidate || !job || !application) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -115,12 +107,10 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
                                 <h2 className="text-lg font-bold text-slate-800">Your Application Status</h2>
                                 <p className="text-sm text-slate-500">Last updated: {new Date().toLocaleDateString()}</p>
                             </div>
-                            {/* FIX: Get status from application object, not candidate. */}
                             <div className={`mt-3 sm:mt-0 px-3 py-1.5 text-sm font-medium rounded-full ${statusColors[application.status]}`}>
                                 {application.status}
                             </div>
                         </div>
-                        {/* FIX: Get status from application object, not candidate. */}
                         {application.status === CandidateStatus.WITHDRAWN && (
                             <p className="mt-4 text-sm text-slate-600 bg-slate-100 p-3 rounded-md">You have successfully withdrawn your application. Thank you for your interest.</p>
                         )}
@@ -155,7 +145,6 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
                             <p>{job.description}</p>
                         </div>
                     </div>
-                     {/* FIX: Get status from application object, not candidate. */}
                      {application.status !== CandidateStatus.WITHDRAWN && application.status !== CandidateStatus.HIRED && (
                         <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                             <button 

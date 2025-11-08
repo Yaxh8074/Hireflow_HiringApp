@@ -4,6 +4,7 @@ import type { usePaygApi } from '../hooks/usePaygApi.ts';
 import { PRICING } from '../constants.ts';
 import { ServiceType } from '../types.ts';
 import PlusIcon from './icons/PlusIcon.tsx';
+import { usePayments } from '../contexts/PaymentContext.tsx';
 
 interface MarketplaceProps {
   api: ReturnType<typeof usePaygApi>;
@@ -19,15 +20,19 @@ const serviceDescriptions: Record<ServiceType, string> = {
 }
 
 const Marketplace: React.FC<MarketplaceProps> = ({ api }) => {
+  const { triggerPayment } = usePayments();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const handlePurchase = (service: ServiceType) => {
-    const confirmationMessage = `Purchase "${service}"? This will be added to your bill. ${api.isDiscountActive ? 'Your 90% new member discount will be applied.' : ''}`;
-    if(window.confirm(confirmationMessage)) {
-        api.addBillingCharge(service, `One-time purchase: ${service}`);
-    }
+    triggerPayment(
+      {
+        service: service,
+        description: `One-time purchase: ${service}`
+      },
+      () => api.addBillingCharge(service, `One-time purchase: ${service}`)
+    )
   }
   
   const formatDate = (date: Date | null) => {
@@ -78,7 +83,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ api }) => {
                 className="w-full mt-4 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400"
               >
                 <PlusIcon className="h-5 w-5 mr-2 -ml-1" />
-                Add to Bill
+                Purchase
               </button>
             </div>
           </div>
