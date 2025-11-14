@@ -1,8 +1,10 @@
 
+
 import React, { useState, useMemo } from 'react';
 import type { Job, View, Application } from '../types.ts';
 import { JobStatus } from '../types.ts';
 import PlusIcon from './icons/PlusIcon.tsx';
+import { useCurrency } from '../contexts/CurrencyContext.tsx';
 
 interface JobListProps {
   jobs: Job[];
@@ -20,6 +22,7 @@ const statusColors: Record<JobStatus, string> = {
 const JobList: React.FC<JobListProps> = ({ jobs, applications, onSelectJob, onViewChange }) => {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const { formatSalaryRange } = useCurrency();
 
   const applicationsByJob = useMemo(() => {
     return applications.reduce((acc, app) => {
@@ -97,7 +100,7 @@ const JobList: React.FC<JobListProps> = ({ jobs, applications, onSelectJob, onVi
                             <div>
                                 <p className="text-lg font-semibold text-indigo-600">{job.title}</p>
                                 <p className="text-sm text-slate-500 mt-1">
-                                    {job.location} <span className="mx-2 text-slate-300">&bull;</span> {job.salary}
+                                    {job.location} <span className="mx-2 text-slate-300">&bull;</span> {formatSalaryRange(job.salary)}
                                 </p>
                             </div>
                             <div className="text-right flex-shrink-0 ml-4">

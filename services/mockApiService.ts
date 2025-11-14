@@ -1,5 +1,5 @@
 
-import type { Job, Candidate, BillingItem, Company, Application, User } from '../types.ts';
+import type { Job, Candidate, BillingItem, Company, Application, User, SourcedCandidate, Note, Team } from '../types.ts';
 import { ServiceType, CandidateStatus, BackgroundCheckStatus, JobStatus } from '../types.ts';
 import { PRICING } from '../constants.ts';
 
@@ -31,7 +31,7 @@ export const isDiscountActive = (): boolean => {
 // --- ROBUST ID GENERATION ---
 const generateId = (() => {
     let counter = 100; // Start high to avoid collision with existing mock data
-    return (prefix: 'job' | 'app' | 'b' | 'c') => {
+    return (prefix: 'job' | 'app' | 'b' | 'c' | 'u' | 'n' | 't') => {
         counter++;
         return `${prefix}${counter}`;
     };
@@ -40,6 +40,15 @@ const generateId = (() => {
 
 // --- MOCK DATABASE ---
 let MOCK_COMPANY: Company = { id: 'comp1', name: 'Innovate Inc.' };
+
+let MOCK_HM_USERS: Record<string, User> = {
+    'hm1': { id: 'hm1', email: 'hiring.manager@innovate.com', name: 'Hiring Manager', role: 'hiring-manager', teamId: 't1', teamRole: 'Admin' },
+    'hm2': { id: 'hm2', email: 'charlie@example.com', name: 'Charlie Brown', role: 'hiring-manager', teamId: 't1', teamRole: 'Member' }
+};
+
+let MOCK_TEAMS: Record<string, Team> = {
+    't1': { id: 't1', name: 'Innovate Inc. Hiring Team', adminId: 'hm1', memberIds: ['hm1', 'hm2'] }
+};
 
 let MOCK_CANDIDATES: Record<string, Candidate> = {
   'c1': { id: 'c1', name: 'Alice Johnson', email: 'alice@example.com', title: 'Senior Frontend Developer', summary: '8 years of experience with React, TypeScript, and Next.js. Passionate about building scalable and accessible UIs.', phone: '555-0101', location: 'San Francisco, CA', resumeText: 'Detailed resume for Alice Johnson...', resumeFileName: null, resumeFileData: null, backgroundCheck: BackgroundCheckStatus.COMPLETED },
@@ -166,13 +175,66 @@ Qualifications
 
 let MOCK_APPLICATIONS: Application[] = [
     // Job 1
-    { id: 'app1', jobId: 'job1', candidateId: 'c1', status: CandidateStatus.INTERVIEW, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), notes: 'Seems like a strong fit. Asked good questions in the initial screen.', resumeText: MOCK_CANDIDATES['c1'].resumeText },
-    { id: 'app2', jobId: 'job1', candidateId: 'c2', status: CandidateStatus.APPLIED, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), resumeText: MOCK_CANDIDATES['c2'].resumeText },
-    { id: 'app3', jobId: 'job1', candidateId: 'c3', status: CandidateStatus.OFFER, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), resumeText: MOCK_CANDIDATES['c3'].resumeText },
+    { 
+      id: 'app1', 
+      jobId: 'job1', 
+      candidateId: 'c1', 
+      status: CandidateStatus.INTERVIEW, 
+      appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), 
+      notes: [
+          { id: 'n1', authorId: 'hm1', authorName: 'Hiring Manager', text: 'Seems like a strong fit. Asked good questions in the initial screen. @Charlie Brown can you take a look?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString() },
+          { id: 'n2', authorId: 'hm2', authorName: 'Charlie Brown', text: 'Agreed, resume looks solid. Let\'s move to the technical interview.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString() }
+      ], 
+      resumeText: MOCK_CANDIDATES['c1'].resumeText, 
+      resumeViews: 5,
+      interviewSchedule: {
+        status: 'pending',
+        proposedSlots: [
+          new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(),
+          new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
+          new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
+        ]
+      }
+    },
+    { 
+      id: 'app2', 
+      jobId: 'job1', 
+      candidateId: 'c2', 
+      status: CandidateStatus.APPLIED, 
+      appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), 
+      resumeText: MOCK_CANDIDATES['c2'].resumeText, 
+      resumeViews: 2,
+      skillAssessment: {
+        status: 'pending',
+        questions: [
+            { question: "Which hook is used to perform side effects in a React functional component?", options: ["useState", "useEffect", "useContext", "useReducer"], correctAnswerIndex: 1 },
+            { question: "What is the purpose of a 'key' prop in a list of React elements?", options: ["It provides a unique class name", "It helps React identify which items have changed", "It sets the encryption key for the component", "It's used for CSS styling"], correctAnswerIndex: 1 },
+            { question: "How do you pass data from a parent component to a child component?", options: ["Using state", "Using context", "Using props", "All of the above"], correctAnswerIndex: 2 },
+        ]
+      }
+    },
+    { id: 'app3', jobId: 'job1', candidateId: 'c3', status: CandidateStatus.OFFER, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), resumeText: MOCK_CANDIDATES['c3'].resumeText, resumeViews: 12, interviewSchedule: { status: 'booked', proposedSlots: [], confirmedSlot: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString() } },
     // Job 2
-    { id: 'app4', jobId: 'job2', candidateId: 'c5', status: CandidateStatus.SCREENING, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), resumeText: MOCK_CANDIDATES['c5'].resumeText },
+    { 
+        id: 'app4', 
+        jobId: 'job2', 
+        candidateId: 'c5', 
+        status: CandidateStatus.SCREENING, 
+        appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), 
+        resumeText: MOCK_CANDIDATES['c5'].resumeText, 
+        resumeViews: 3,
+        skillAssessment: {
+            status: 'completed',
+            questions: [
+                 { question: "What is the primary function of a Dockerfile?", options: ["To run a container", "To build a Docker image", "To manage Docker volumes", "To connect to a Docker network"], correctAnswerIndex: 1 },
+                 { question: "Which AWS service is used for scalable object storage?", options: ["EC2", "RDS", "S3", "Lambda"], correctAnswerIndex: 2 },
+            ],
+            answers: [1, 2],
+            score: 1.0,
+        }
+    },
     // Job 3
-    { id: 'app5', jobId: 'job3', candidateId: 'c4', status: CandidateStatus.HIRED, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), resumeText: MOCK_CANDIDATES['c4'].resumeText },
+    { id: 'app5', jobId: 'job3', candidateId: 'c4', status: CandidateStatus.HIRED, appliedDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), resumeText: MOCK_CANDIDATES['c4'].resumeText, resumeViews: 8 },
 ];
 
 
@@ -189,6 +251,22 @@ const simulateDelay = <T,>(data: T): Promise<T> =>
 
 
 // --- API FUNCTIONS ---
+
+export const fetchUserByEmail = (email: string): Promise<User | undefined> => {
+    const user = Object.values(MOCK_HM_USERS).find(u => u.email.toLowerCase() === email.toLowerCase());
+    return simulateDelay(user);
+};
+
+export const fetchTeam = (teamId: string): Promise<Team | undefined> => {
+    return simulateDelay(MOCK_TEAMS[teamId]);
+};
+
+export const fetchTeamMembers = (teamId: string): Promise<User[]> => {
+    const team = MOCK_TEAMS[teamId];
+    if (!team) return simulateDelay([]);
+    const members = team.memberIds.map(id => MOCK_HM_USERS[id]).filter(Boolean);
+    return simulateDelay(members);
+};
 
 export const fetchJobs = (): Promise<Job[]> => {
   return simulateDelay(MOCK_JOBS.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -293,12 +371,21 @@ export const applyForJob = async (
     jobId: string, 
     candidateId: string,
     resumeData: { resumeText?: string; resumeFileName?: string; resumeFileData?: string; }
-): Promise<Application> => {
+): Promise<{ newApplication: Application; updatedCandidate: Candidate; }> => {
     const job = MOCK_JOBS.find(j => j.id === jobId);
     if (!job) return Promise.reject(new Error('Job not found'));
     
     const candidate = MOCK_CANDIDATES[candidateId];
     if (!candidate) return Promise.reject(new Error('Candidate not found'));
+
+    // "Easy Apply" feature: Save resume to profile if it's missing
+    if (!candidate.resumeText && !candidate.resumeFileName) {
+        if (resumeData.resumeText) candidate.resumeText = resumeData.resumeText;
+        if (resumeData.resumeFileName && resumeData.resumeFileData) {
+            candidate.resumeFileName = resumeData.resumeFileName;
+            candidate.resumeFileData = resumeData.resumeFileData;
+        }
+    }
 
     const existingApplication = MOCK_APPLICATIONS.find(app => app.jobId === jobId && app.candidateId === candidateId);
     if (existingApplication) {
@@ -311,12 +398,13 @@ export const applyForJob = async (
         candidateId,
         status: CandidateStatus.APPLIED,
         appliedDate: new Date().toISOString(),
+        resumeViews: 0,
         ...resumeData,
     };
     
     MOCK_APPLICATIONS.push(newApplication);
     
-    return simulateDelay(newApplication);
+    return simulateDelay({ newApplication, updatedCandidate: candidate });
 }
 
 export const withdrawApplication = (applicationId: string): Promise<Application> => {
@@ -360,4 +448,102 @@ export const createUser = async (name: string, email: string, role: 'candidate')
         role: 'candidate'
     };
     return simulateDelay(newUser);
+};
+
+
+export const sourceCandidatesForJob = async (jobId: string): Promise<Job> => {
+    const jobIndex = MOCK_JOBS.findIndex(j => j.id === jobId);
+    if (jobIndex === -1) {
+        return Promise.reject(new Error('Job not found'));
+    }
+
+    const appliedCandidateIds = new Set(MOCK_APPLICATIONS.filter(app => app.jobId === jobId).map(app => app.candidateId));
+    
+    const availableCandidates = Object.values(MOCK_CANDIDATES).filter(c => !appliedCandidateIds.has(c.id));
+    
+    // Select up to 3 random candidates
+    const shuffled = availableCandidates.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+    
+    const sourcedCandidates: SourcedCandidate[] = selected.map(candidate => ({
+        candidateId: candidate.id,
+        // This would be a real AI justification in a live app
+        justification: `Mock justification: ${candidate.name} appears to have relevant experience in their field as a ${candidate.title}.`,
+        status: 'pending',
+    }));
+
+    const updatedJob = { ...MOCK_JOBS[jobIndex], sourcedCandidates };
+    MOCK_JOBS[jobIndex] = updatedJob;
+
+    return simulateDelay(updatedJob);
+};
+
+
+export const inviteSourcedCandidate = async (jobId: string, candidateId: string): Promise<Job> => {
+    const jobIndex = MOCK_JOBS.findIndex(j => j.id === jobId);
+    if (jobIndex === -1) {
+        return Promise.reject(new Error('Job not found'));
+    }
+
+    const job = MOCK_JOBS[jobIndex];
+    if (!job.sourcedCandidates) {
+        return Promise.reject(new Error('No sourced candidates for this job.'));
+    }
+
+    const updatedSourcedCandidates = job.sourcedCandidates.map(sc => 
+        sc.candidateId === candidateId ? { ...sc, status: 'invited' as const } : sc
+    );
+
+    const updatedJob = { ...job, sourcedCandidates: updatedSourcedCandidates };
+    MOCK_JOBS[jobIndex] = updatedJob;
+
+    return simulateDelay(updatedJob);
+};
+
+export const inviteTeamMember = async (email: string, teamId: string): Promise<{ updatedTeam: Team; newMember: User; }> => {
+    const team = MOCK_TEAMS[teamId];
+    if (!team) {
+        return Promise.reject(new Error('Team not found.'));
+    }
+    if (Object.values(MOCK_HM_USERS).some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        return Promise.reject(new Error('User with this email already exists in the team.'));
+    }
+
+    const newMemberId = generateId('u');
+    const newMember: User = {
+        id: newMemberId,
+        email,
+        name: email.split('@')[0], // simple name generation
+        role: 'hiring-manager',
+        teamId,
+        teamRole: 'Member'
+    };
+    MOCK_HM_USERS[newMemberId] = newMember;
+    
+    const updatedTeam = { ...team, memberIds: [...team.memberIds, newMemberId] };
+    MOCK_TEAMS[teamId] = updatedTeam;
+    
+    return simulateDelay({ updatedTeam, newMember });
+};
+
+
+export const addNoteToApplication = async (applicationId: string, noteText: string, author: User): Promise<Application> => {
+    const appIndex = MOCK_APPLICATIONS.findIndex(a => a.id === applicationId);
+    if (appIndex === -1) {
+        return Promise.reject(new Error('Application not found'));
+    }
+    const application = MOCK_APPLICATIONS[appIndex];
+    const newNote: Note = {
+        id: generateId('n'),
+        authorId: author.id,
+        authorName: author.name,
+        text: noteText,
+        timestamp: new Date().toISOString(),
+    };
+    
+    const updatedNotes = [...(application.notes || []), newNote];
+    const updatedApplication = { ...application, notes: updatedNotes };
+    MOCK_APPLICATIONS[appIndex] = updatedApplication;
+
+    return simulateDelay(updatedApplication);
 };

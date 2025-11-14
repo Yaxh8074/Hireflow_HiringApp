@@ -7,6 +7,7 @@ import MyApplications from './MyApplications.tsx';
 import CandidateJobDetail from './CandidateJobDetail.tsx';
 import type { CandidateView } from '../../types.ts';
 import CandidateProfile from './CandidateProfile.tsx';
+import InterviewPrep from './InterviewPrep.tsx';
 
 const CandidateAppLayout: React.FC = () => {
     const [currentView, setCurrentView] = useState<CandidateView>('job-search');
@@ -36,6 +37,8 @@ const CandidateAppLayout: React.FC = () => {
                 return <JobSearch api={api} onSelectJob={handleSelectJob} />;
             case 'profile':
                 return <CandidateProfile api={api} />;
+            case 'interview-prep':
+                return <InterviewPrep api={api} />;
             default:
                 return <JobSearch api={api} onSelectJob={handleSelectJob} />;
         }

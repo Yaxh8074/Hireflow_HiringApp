@@ -1,6 +1,6 @@
 
-export type View = 'dashboard' | 'jobs' | 'job-detail' | 'new-job' | 'billing' | 'marketplace' | 'candidates' | 'company-profile';
-export type CandidateView = 'job-search' | 'my-applications' | 'job-detail' | 'profile';
+export type View = 'dashboard' | 'jobs' | 'job-detail' | 'new-job' | 'billing' | 'marketplace' | 'candidates' | 'company-profile' | 'hr-connect' | 'team';
+export type CandidateView = 'job-search' | 'my-applications' | 'job-detail' | 'profile' | 'interview-prep';
 
 
 export enum ServiceType {
@@ -10,6 +10,10 @@ export enum ServiceType {
   AI_SCREENING = 'AI Candidate Screening',
   SKILL_ASSESSMENT = 'Skill Assessment',
   VIDEO_INTERVIEW = 'Video Interview Service',
+  HR_CONSULTATION = 'HR Consultation',
+  RECRUITMENT_ASSISTANCE = 'Recruitment Assistance',
+  INTERVIEW_SCHEDULING = 'Interview Scheduling',
+  AI_SOURCING = 'AI Sourcing Agent',
 }
 
 export interface BillingItem {
@@ -56,6 +60,12 @@ export enum JobStatus {
     CLOSED = 'Closed'
 }
 
+export interface SourcedCandidate {
+    candidateId: string;
+    justification: string;
+    status: 'pending' | 'invited';
+}
+
 export interface Job {
   id:string;
   title: string;
@@ -64,7 +74,36 @@ export interface Job {
   description: string;
   createdAt: string;
   status: JobStatus;
+  sourcedCandidates?: SourcedCandidate[];
 }
+
+export interface InterviewSchedule {
+    status: 'pending' | 'booked' | 'completed';
+    proposedSlots: string[];
+    confirmedSlot?: string;
+}
+
+export interface SkillAssessmentQuestion {
+    question: string;
+    options: string[];
+    correctAnswerIndex: number;
+}
+
+export interface SkillAssessment {
+    status: 'pending' | 'completed';
+    questions: SkillAssessmentQuestion[];
+    answers?: number[]; // indices of selected answers
+    score?: number; // e.g. 0.8 for 80%
+}
+
+export interface Note {
+    id: string;
+    authorId: string;
+    authorName: string;
+    text: string;
+    timestamp: string;
+}
+
 
 export interface Application {
     id: string;
@@ -72,10 +111,14 @@ export interface Application {
     candidateId: string;
     status: CandidateStatus;
     appliedDate: string;
-    notes?: string;
+    notes?: Note[];
     resumeText?: string;
     resumeFileName?: string;
     resumeFileData?: string;
+    lastReminderSent?: string;
+    resumeViews?: number;
+    interviewSchedule?: InterviewSchedule;
+    skillAssessment?: SkillAssessment;
 }
 
 
@@ -89,4 +132,21 @@ export interface User {
   email: string;
   name: string;
   role: 'hiring-manager' | 'candidate';
+  teamId?: string;
+  teamRole?: 'Admin' | 'Member';
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    adminId: string;
+    memberIds: string[];
+}
+
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
 }

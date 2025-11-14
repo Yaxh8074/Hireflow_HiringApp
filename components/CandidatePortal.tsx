@@ -5,9 +5,14 @@ import { CandidateStatus } from '../types.ts';
 import { usePaygApi } from '../hooks/usePaygApi.ts';
 import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
 import CheckCircleIcon from './icons/CheckCircleIcon.tsx';
+import Chat from './Chat.tsx';
+import ChatBubbleLeftRightIcon from './icons/ChatBubbleLeftRightIcon.tsx';
+import BookingModal from './candidate/BookingModal.tsx';
+import SkillAssessmentModal from './candidate/SkillAssessmentModal.tsx';
+import ClipboardDocumentCheckIcon from './icons/ClipboardDocumentCheckIcon.tsx';
 
 interface CandidatePortalProps {
-    candidateId: string;
+    applicationId: string;
 }
 
 const statusColors: Record<CandidateStatus, string> = {
@@ -27,35 +32,29 @@ const applicationStages = [
     CandidateStatus.HIRED,
 ];
 
-const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
+const CandidatePortal: React.FC<CandidatePortalProps> = ({ applicationId }) => {
     const api = usePaygApi();
     const [candidate, setCandidate] = useState<Candidate | null>(null);
     const [job, setJob] = useState<Job | null>(null);
     const [application, setApplication] = useState<Application | null>(null);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
 
     useEffect(() => {
-        if (api.candidates && api.jobs.length > 0 && api.applications.length > 0) {
-            const foundCandidate = api.candidates[candidateId] || null;
-            setCandidate(foundCandidate);
+        if (api.applications.length > 0 && Object.keys(api.candidates).length > 0 && api.jobs.length > 0) {
+            const foundApplication = api.applications.find(app => app.id === applicationId) || null;
+            setApplication(foundApplication);
 
-            if (foundCandidate) {
-                const candidateApplications = api.applications
-                    .filter(app => app.candidateId === candidateId)
-                    .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime());
-                
-                const latestApplication = candidateApplications[0] || null;
-
-                if (latestApplication) {
-                    const foundJob = api.jobs.find(j => j.id === latestApplication.jobId) || null;
-                    setJob(foundJob);
-                    setApplication(latestApplication);
-                } else {
-                    setJob(null);
-                    setApplication(null);
-                }
+            if (foundApplication) {
+                const foundCandidate = api.candidates[foundApplication.candidateId] || null;
+                const foundJob = api.jobs.find(j => j.id === foundApplication.jobId) || null;
+                setCandidate(foundCandidate);
+                setJob(foundJob);
             }
         }
-    }, [candidateId, api.candidates, api.jobs, api.applications]);
+    }, [applicationId, api.applications, api.candidates, api.jobs]);
+
 
     const handleWithdraw = () => {
         if(application && window.confirm("Are you sure you want to withdraw your application? This action cannot be undone.")) {
@@ -88,6 +87,11 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
         )
     }
 
+    const showBookingButton = application.interviewSchedule?.status === 'pending';
+    const showConfirmedSlot = application.interviewSchedule?.status === 'booked' && application.interviewSchedule.confirmedSlot;
+    const showAssessmentButton = application.skillAssessment?.status === 'pending';
+    const showAssessmentResult = application.skillAssessment?.status === 'completed';
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
             <header className="bg-white shadow-sm">
@@ -100,6 +104,47 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
                 <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm border border-slate-200">
                     <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Hello, {candidate.name}</h1>
                     <p className="text-slate-500 mt-1">Here's the current status of your application for the <span className="font-semibold text-indigo-600">{job.title}</span> position.</p>
+                    
+                    {showAssessmentButton && (
+                        <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500">
+                            <h3 className="font-bold text-yellow-800">Action Required: Complete Your Skill Assessment</h3>
+                            <p className="text-sm text-yellow-700 mt-1">Please complete a short skill assessment to proceed with your application.</p>
+                            <button 
+                                onClick={() => setIsAssessmentModalOpen(true)}
+                                className="mt-3 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700"
+                            >
+                                Take Skill Assessment
+                            </button>
+                        </div>
+                    )}
+                    
+                    {showBookingButton && (
+                        <div className="mt-6 p-4 bg-indigo-50 border-l-4 border-indigo-500">
+                            <h3 className="font-bold text-indigo-800">Action Required: Book Your Interview</h3>
+                            <p className="text-sm text-indigo-700 mt-1">Please select a time for your interview. Click the button below to see available slots.</p>
+                            <button 
+                                onClick={() => setIsBookingModalOpen(true)}
+                                className="mt-3 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                Book Your Interview
+                            </button>
+                        </div>
+                    )}
+
+                     {showConfirmedSlot && (
+                        <div className="mt-6 p-4 bg-green-50 border-l-4 border-green-500">
+                            <h3 className="font-bold text-green-800">Interview Confirmed!</h3>
+                            <p className="text-sm text-green-700 mt-1">Your interview is scheduled for: <strong>{new Date(application.interviewSchedule.confirmedSlot!).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })}</strong></p>
+                        </div>
+                    )}
+
+                    {showAssessmentResult && (
+                         <div className="mt-6 p-4 bg-green-50 border-l-4 border-green-500">
+                            <h3 className="font-bold text-green-800">Skill Assessment Completed!</h3>
+                            <p className="text-sm text-green-700 mt-1">You scored: <strong>{(application.skillAssessment!.score! * 100).toFixed(0)}%</strong>. We will review your results and be in touch shortly.</p>
+                        </div>
+                    )}
+
 
                     <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-lg">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center">
@@ -146,18 +191,57 @@ const CandidatePortal: React.FC<CandidatePortalProps> = ({ candidateId }) => {
                         </div>
                     </div>
                      {application.status !== CandidateStatus.WITHDRAWN && application.status !== CandidateStatus.HIRED && (
-                        <div className="mt-8 pt-6 border-t border-slate-200 text-center">
-                            <button 
-                                onClick={handleWithdraw}
-                                className="px-5 py-2 border border-red-300 text-sm font-medium rounded-md shadow-sm text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                                Withdraw Application
-                            </button>
-                            <p className="text-xs text-slate-400 mt-2">If you are no longer interested in this position.</p>
+                        <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-start justify-center gap-6 text-center">
+                            <div>
+                                <button
+                                    onClick={() => setIsChatOpen(true)}
+                                    className="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2 -ml-1" />
+                                    Contact HR
+                                </button>
+                                <p className="text-xs text-slate-400 mt-2">Have a question about your application?</p>
+                            </div>
+                            <div>
+                                <button
+                                    onClick={handleWithdraw}
+                                    className="px-5 py-2 border border-red-300 text-sm font-medium rounded-md shadow-sm text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                >
+                                    Withdraw Application
+                                </button>
+                                <p className="text-xs text-slate-400 mt-2">If you are no longer interested.</p>
+                            </div>
                         </div>
                     )}
                 </div>
             </main>
+            {job && candidate && (
+                <Chat
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    chatId={application.id}
+                    chatTitle={`Chat about ${job.title}`}
+                    participant={{id: 'hm1', name: 'Innovate Inc. HR'}}
+                />
+            )}
+            {job && application && (
+                <BookingModal
+                    isOpen={isBookingModalOpen}
+                    onClose={() => setIsBookingModalOpen(false)}
+                    application={application}
+                    job={job}
+                    api={api}
+                />
+            )}
+            {job && application && application.skillAssessment && (
+                <SkillAssessmentModal
+                    isOpen={isAssessmentModalOpen}
+                    onClose={() => setIsAssessmentModalOpen(false)}
+                    application={application}
+                    job={job}
+                    api={api}
+                />
+            )}
         </div>
     )
 }

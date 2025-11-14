@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Candidate, Job, Application } from '../types.ts';
 import { CandidateStatus, BackgroundCheckStatus, ServiceType } from '../types.ts';
 import type { usePaygApi } from '../hooks/usePaygApi.ts';
-import { screenCandidate } from '../services/geminiService.ts';
+import { screenCandidate, generateSkillAssessment } from '../services/geminiService.ts';
 import SparklesIcon from './icons/SparklesIcon.tsx';
 import EnvelopeIcon from './icons/EnvelopeIcon.tsx';
 import PhoneIcon from './icons/PhoneIcon.tsx';
@@ -11,6 +11,14 @@ import ShieldCheckIcon from './icons/ShieldCheckIcon.tsx';
 import EllipsisVerticalIcon from './icons/EllipsisVerticalIcon.tsx';
 import LinkIcon from './icons/LinkIcon.tsx';
 import { usePayments } from '../contexts/PaymentContext.tsx';
+import BellIcon from './icons/BellIcon.tsx';
+import ChatBubbleLeftRightIcon from './icons/ChatBubbleLeftRightIcon.tsx';
+import { useMessenger } from '../contexts/MessengerContext.tsx';
+import ScheduleInterviewModal from './ScheduleInterviewModal.tsx';
+import CalendarDaysIcon from './icons/CalendarDaysIcon.tsx';
+import LightBulbIcon from './icons/LightBulbIcon.tsx';
+import { useAuth } from '../hooks/useAuth.ts';
+
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -35,20 +43,33 @@ const backgroundCheckColors: Record<BackgroundCheckStatus, string> = {
   [BackgroundCheckStatus.FLAGGED]: 'bg-red-100 text-red-800',
 };
 
+const renderNoteText = (text: string) => {
+    const parts = text.split(/(@\w+\s*\w*)/g);
+    return parts.map((part, index) => {
+        if (part.startsWith('@')) {
+            return <strong key={index} className="text-indigo-600 bg-indigo-100 rounded px-1">{part}</strong>;
+        }
+        return part;
+    });
+};
+
+
 const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, application, api }) => {
   const [isScreening, setIsScreening] = useState(false);
-  const [notes, setNotes] = useState(application.notes || '');
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [newNote, setNewNote] = useState('');
   const [showResume, setShowResume] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isSendingAssessment, setIsSendingAssessment] = useState(false);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
-  const { updateCandidateProfile, updateApplicationState, addBillingCharge } = api;
+  const { user } = useAuth();
+  const { updateCandidateProfile, updateApplicationState, addBillingCharge, addNoteToApplication } = api;
   const { triggerPayment } = usePayments();
+  const { openMessenger } = useMessenger();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // FIX: Corrected typo from actionsMenu_current to actionsMenuRef.current
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
         setIsActionsOpen(false);
       }
@@ -72,54 +93,60 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
     );
   };
 
-  const handleBackgroundCheck = () => {
-    triggerPayment(
-      {
-        service: ServiceType.BACKGROUND_CHECK,
-        description: `Background Check for ${candidate.name}`,
-      },
-      async () => {
-        await addBillingCharge(ServiceType.BACKGROUND_CHECK, `Background Check for ${candidate.name}`);
-        await updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.PENDING });
-        // Simulate completion
-        setTimeout(() => {
-          updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.COMPLETED });
-        }, 5000);
-      }
-    );
+  const handleBackgroundCheck = async () => {
+    setIsActionsOpen(false);
+    try {
+      await addBillingCharge(ServiceType.BACKGROUND_CHECK, `Background Check for ${candidate.name}`);
+      await updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.PENDING });
+      // Simulate completion
+      setTimeout(() => {
+        updateCandidateProfile(candidate.id, { backgroundCheck: BackgroundCheckStatus.COMPLETED });
+      }, 5000);
+    } catch (err) {
+      console.error("Failed to order Background Check:", err);
+    }
   };
 
   const handleAiScreening = async () => {
-    triggerPayment(
-      {
-        service: ServiceType.AI_SCREENING,
-        description: `AI Screening for ${candidate.name}`,
-      },
-      async () => {
-        await addBillingCharge(ServiceType.AI_SCREENING, `AI Screening for ${candidate.name}`);
-        setIsScreening(true);
-        const result = await screenCandidate(job.description, candidate.summary);
-        await updateCandidateProfile(candidate.id, { aiScreeningResult: result });
-        setIsScreening(false);
-      }
-    );
+    setIsActionsOpen(false);
+    setIsScreening(true);
+    try {
+      await addBillingCharge(ServiceType.AI_SCREENING, `AI Screening for ${candidate.name}`);
+      const result = await screenCandidate(job.description, candidate.summary);
+      await updateCandidateProfile(candidate.id, { aiScreeningResult: result });
+    } catch (err) {
+      console.error("Failed to perform AI Screening:", err);
+    }
+    finally {
+      setIsScreening(false);
+    }
   };
   
-  const handleAddOnService = (service: ServiceType) => {
-    const serviceName = service.toString();
-    triggerPayment(
-      {
-        service: service,
-        description: `${serviceName} for ${candidate.name}`,
-      },
-      () => addBillingCharge(service, `${serviceName} for ${candidate.name}`)
-    );
-  }
+  const handleSendSkillAssessment = async () => {
+    setIsActionsOpen(false);
+    setIsSendingAssessment(true);
+    try {
+        const questions = await generateSkillAssessment(job.description);
+        await addBillingCharge(ServiceType.SKILL_ASSESSMENT, `Skill Assessment for ${candidate.name}`);
+        await updateApplicationState(application.id, {
+            skillAssessment: {
+                status: 'pending',
+                questions: questions,
+            }
+        });
+    } catch (err) {
+        console.error("Failed to send Skill Assessment:", err);
+        // Global error handler will catch this
+    } finally {
+        setIsSendingAssessment(false);
+    }
+  };
   
-  const handleSaveNotes = async () => {
-    setIsSavingNotes(true);
-    await updateApplicationState(application.id, { notes });
-    setIsSavingNotes(false);
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+    await addNoteToApplication(application.id, newNote.trim());
+    setNewNote('');
   }
 
   const handleCopyLink = () => {
@@ -132,6 +159,16 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
         }, 2000);
     });
   }
+  
+  const handleToggleResume = () => {
+    const newShowResumeState = !showResume;
+    setShowResume(newShowResumeState);
+
+    // Only increment view count when opening the resume
+    if (newShowResumeState && application.status !== CandidateStatus.WITHDRAWN) {
+      updateApplicationState(application.id, { resumeViews: (application.resumeViews || 0) + 1 });
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('applicationId', application.id);
@@ -145,7 +182,12 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
   const isHired = application.status === CandidateStatus.HIRED;
   const isWithdrawn = application.status === CandidateStatus.WITHDRAWN;
 
+  const canScheduleInterview = 
+    [CandidateStatus.SCREENING, CandidateStatus.INTERVIEW, CandidateStatus.OFFER].includes(application.status) &&
+    !application.interviewSchedule;
+
   return (
+    <>
     <div 
         draggable={!isWithdrawn}
         onDragStart={handleDragStart}
@@ -169,6 +211,34 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
                 <PhoneIcon className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
                 <a href={`tel:${candidate.phone}`} title={`Call ${candidate.name}`} className="hover:underline">{candidate.phone}</a>
             </div>
+            {application.lastReminderSent && (
+                <div className="flex items-center text-xs text-slate-500 pt-1">
+                    <BellIcon className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
+                    <span>Reminder sent: {new Date(application.lastReminderSent).toLocaleDateString()}</span>
+                </div>
+            )}
+            {application.interviewSchedule && (
+                <div className="flex items-center text-xs text-slate-500 pt-1">
+                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
+                    <span>
+                        {application.interviewSchedule.status === 'booked' && application.interviewSchedule.confirmedSlot
+                            ? `Interview: ${new Date(application.interviewSchedule.confirmedSlot).toLocaleDateString([], {
+                                weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}`
+                            : 'Scheduling Pending'}
+                    </span>
+                </div>
+            )}
+            {application.skillAssessment && (
+                <div className="flex items-center text-xs text-slate-500 pt-1">
+                    <LightBulbIcon className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
+                    <span>
+                        Skill Assessment: {application.skillAssessment.status === 'completed' && typeof application.skillAssessment.score === 'number'
+                            ? `${(application.skillAssessment.score * 100).toFixed(0)}% (${application.skillAssessment.answers?.filter((ans, i) => ans === application.skillAssessment?.questions[i].correctAnswerIndex).length}/${application.skillAssessment.questions.length})`
+                            : 'Pending'}
+                    </span>
+                </div>
+            )}
         </div>
 
         {candidate.aiScreeningResult && (
@@ -181,7 +251,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
         <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
             {(application.resumeText || application.resumeFileData) && (
               <div>
-                <button onClick={() => setShowResume(!showResume)} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                <button onClick={handleToggleResume} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                   {showResume ? 'Hide' : 'View'} Submitted Resume
                 </button>
                 {showResume && (
@@ -207,22 +277,37 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
 
             {!isWithdrawn && (
               <div>
-                <label htmlFor={`notes-${application.id}`} className="block text-sm font-medium text-slate-700">Private Notes</label>
-                <textarea
-                  id={`notes-${application.id}`}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="e.g., strong technical skills, good cultural fit..."
-                />
-                <button 
-                  onClick={handleSaveNotes} 
-                  disabled={isSavingNotes || api.isLoading}
-                  className="mt-2 text-xs px-3 py-1.5 border border-transparent font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
-                >
-                  {isSavingNotes ? 'Saving...' : 'Save Notes'}
-                </button>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Team Notes</label>
+                <div className="space-y-3">
+                    {application.notes && application.notes.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto space-y-3 pr-2">
+                        {application.notes.map(note => (
+                            <div key={note.id} className="text-xs">
+                                <p className="font-semibold text-slate-800">{note.authorName} <span className="text-slate-400 font-normal ml-1">{new Date(note.timestamp).toLocaleString()}</span></p>
+                                <p className="text-slate-600">{renderNoteText(note.text)}</p>
+                            </div>
+                        ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-400">No notes yet.</p>
+                    )}
+                    <form onSubmit={handleAddNote}>
+                        <textarea
+                          value={newNote}
+                          onChange={(e) => setNewNote(e.target.value)}
+                          rows={2}
+                          className="mt-2 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Add a new note. Use @ to mention team members..."
+                        />
+                        <button 
+                          type="submit"
+                          disabled={api.isLoading || !newNote.trim()}
+                          className="mt-2 text-xs px-3 py-1.5 border border-transparent font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
+                        >
+                          Add Note
+                        </button>
+                    </form>
+                </div>
               </div>
             )}
         </div>
@@ -245,6 +330,15 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
           )}
 
           {!isWithdrawn && (
+            <>
+            <button 
+                onClick={() => openMessenger(application.id)}
+                className="p-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 rounded-md disabled:opacity-50 transition-colors"
+                aria-label="Chat with candidate"
+                title="Chat with candidate"
+              >
+                <ChatBubbleLeftRightIcon className="h-5 w-5" />
+              </button>
             <div className="relative flex-shrink-0" ref={actionsMenuRef}>
               <button 
                 onClick={() => setIsActionsOpen(!isActionsOpen)} 
@@ -260,30 +354,51 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, job, applicati
                         <LinkIcon className="h-4 w-4 mr-3" />
                         {linkCopied ? 'Copied!' : 'Copy Status Link'}
                     </button>
+                    {canScheduleInterview && (
+                         <button
+                            onClick={() => {setIsScheduleModalOpen(true); setIsActionsOpen(false);}}
+                            className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                        >
+                            <CalendarDaysIcon className="h-4 w-4 mr-3" />
+                            Schedule Interview
+                        </button>
+                    )}
                     {!candidate.aiScreeningResult && (
-                      <button onClick={() => { handleAiScreening(); setIsActionsOpen(false); }} disabled={isScreening || api.isLoading} className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                      <button onClick={handleAiScreening} disabled={isScreening || api.isLoading} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                        <SparklesIcon className="h-4 w-4 mr-3" />
                         {isScreening ? 'Screening...' : 'AI Screen'}
                       </button>
                     )}
+                    {!application.skillAssessment && (
+                        <button onClick={handleSendSkillAssessment} disabled={isSendingAssessment || api.isLoading} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                            <LightBulbIcon className="h-4 w-4 mr-3" />
+                            {isSendingAssessment ? 'Generating...' : 'Send Skill Assessment'}
+                        </button>
+                    )}
                     {candidate.backgroundCheck === BackgroundCheckStatus.NOT_STARTED && !isHired && (
-                      <button onClick={() => { handleBackgroundCheck(); setIsActionsOpen(false); }} disabled={api.isLoading} className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                      <button onClick={handleBackgroundCheck} disabled={api.isLoading} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                        <ShieldCheckIcon className="h-4 w-4 mr-3" />
                         Order BGC
                       </button>
                     )}
-                    <button onClick={() => { handleAddOnService(ServiceType.SKILL_ASSESSMENT); setIsActionsOpen(false); }} disabled={api.isLoading} className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                      Skill Assessment
-                    </button>
-                    <button onClick={() => { handleAddOnService(ServiceType.VIDEO_INTERVIEW); setIsActionsOpen(false); }} disabled={api.isLoading} className="w-full text-left block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                      Video Interview
-                    </button>
                   </div>
                 </div>
               )}
             </div>
+            </>
           )}
         </div>
       </div>
     </div>
+    <ScheduleInterviewModal 
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        application={application}
+        candidate={candidate}
+        job={job}
+        api={api}
+    />
+    </>
   );
 };
 

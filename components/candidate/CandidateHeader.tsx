@@ -1,10 +1,14 @@
 
+
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth.ts';
 import ArrowRightOnRectangleIcon from '../icons/ArrowRightOnRectangleIcon.tsx';
 import BriefcaseIcon from '../icons/BriefcaseIcon.tsx';
 import type { CandidateView } from '../../types.ts';
 import UserCircleIcon from '../icons/UserCircleIcon.tsx';
+import MicrophoneIcon from '../icons/MicrophoneIcon.tsx';
+import { useCurrency } from '../../contexts/CurrencyContext.tsx';
+import GlobeAltIcon from '../icons/GlobeAltIcon.tsx';
 
 interface CandidateHeaderProps {
   currentView: CandidateView;
@@ -13,20 +17,23 @@ interface CandidateHeaderProps {
 
 const CandidateHeader: React.FC<CandidateHeaderProps> = ({ currentView, onViewChange }) => {
   const { user, logout } = useAuth();
-  const navItems: { view: CandidateView; label: string }[] = [
-    { view: 'job-search', label: 'Job Search' },
-    { view: 'my-applications', label: 'My Applications' },
+  const { currency, setCurrency, currencies } = useCurrency();
+  const navItems: { view: CandidateView; label: string, icon: React.ReactNode }[] = [
+    { view: 'job-search', label: 'Job Search', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
+    { view: 'my-applications', label: 'My Applications', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
+    { view: 'interview-prep', label: 'Interview Prep', icon: <MicrophoneIcon className="h-5 w-5 mr-2" /> },
   ];
 
   const NavLink: React.FC<{ item: typeof navItems[0] }> = ({ item }) => (
     <button
       onClick={() => onViewChange(item.view)}
-      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
         currentView === item.view
           ? 'bg-indigo-100 text-indigo-700'
           : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
       }`}
     >
+      {item.icon}
       {item.label}
     </button>
   );
@@ -51,6 +58,17 @@ const CandidateHeader: React.FC<CandidateHeaderProps> = ({ currentView, onViewCh
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
                  <span className="text-sm text-slate-600 mr-4">Welcome, {user?.name}</span>
+                 <div className="relative mr-2">
+                    <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as any)}
+                        className="appearance-none bg-transparent pl-8 pr-3 py-1.5 border border-transparent text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-0 text-sm"
+                        aria-label="Select currency"
+                    >
+                        {currencies.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <GlobeAltIcon className="h-5 w-5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
                  <button
                     onClick={() => onViewChange('profile')}
                     className={`p-1 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${currentView === 'profile' ? 'text-indigo-600' : ''}`}

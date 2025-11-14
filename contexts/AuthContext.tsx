@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { fetchAllCandidates, createUser as apiCreateUser } from '../services/mockApiService.ts';
+import { fetchAllCandidates, createUser as apiCreateUser, fetchUserByEmail } from '../services/mockApiService.ts';
 import type { User, Candidate } from '../types.ts';
 
 interface AuthContextType {
@@ -49,15 +49,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, pass: string, rememberMe: boolean, role: 'hiring-manager' | 'candidate'): Promise<void> => {
     setIsLoading(true);
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        let userData: User | null = null;
+    // Simulate API call and password check
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (pass !== 'password123') {
+        setIsLoading(false);
+        throw new Error('Invalid email or password.');
+    }
 
-        if (role === 'hiring-manager' && email.toLowerCase() === 'hiring.manager@innovate.com' && pass === 'password123') {
-          userData = { id: 'hm1', email, name: 'Hiring Manager', role: 'hiring-manager' };
-        } else if (role === 'candidate' && pass === 'password123') {
-            // Check against pre-loaded mock candidates
+    try {
+        let userData: User | null = null;
+        if (role === 'hiring-manager') {
+            const foundUser = await fetchUserByEmail(email);
+            if (foundUser) {
+                userData = foundUser;
+            }
+        } else if (role === 'candidate') {
             const foundCandidate = Object.values(mockCandidates || {}).find(c => c.email.toLowerCase() === email.toLowerCase());
             if (foundCandidate) {
                 userData = { id: foundCandidate.id, email: foundCandidate.email, name: foundCandidate.name, role: 'candidate' };
@@ -68,14 +75,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const storage = rememberMe ? localStorage : sessionStorage;
           storage.setItem('authUser', JSON.stringify(userData));
           setUser(userData);
-          setIsLoading(false);
-          resolve();
         } else {
-          setIsLoading(false);
-          reject(new Error('Invalid email or password.'));
+          throw new Error('Invalid email or password.');
         }
-      }, 1000);
-    });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const signup = async (name: string, email: string, pass: string): Promise<void> => {

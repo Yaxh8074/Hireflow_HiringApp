@@ -7,4 +7,8 @@ export const PRICING: Record<ServiceType, number> = {
     [ServiceType.AI_SCREENING]: 2.00,
     [ServiceType.SKILL_ASSESSMENT]: 20.00,
     [ServiceType.VIDEO_INTERVIEW]: 10.00,
+    [ServiceType.HR_CONSULTATION]: 50.00,
+    [ServiceType.RECRUITMENT_ASSISTANCE]: 150.00,
+    [ServiceType.INTERVIEW_SCHEDULING]: 30.00,
+    [ServiceType.AI_SOURCING]: 50.00,
 };

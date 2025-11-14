@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Job, View, ServiceType, Candidate, Application } from '../types.ts';
 import { CandidateStatus, JobStatus } from '../types.ts';
@@ -6,6 +7,7 @@ import type { usePaygApi } from '../hooks/usePaygApi.ts';
 import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
 import UserGroupIcon from './icons/UserGroupIcon.tsx';
 import CurrencyDollarIcon from './icons/CurrencyDollarIcon.tsx';
+import { useCurrency } from '../contexts/CurrencyContext.tsx';
 
 interface DashboardProps {
   api: ReturnType<typeof usePaygApi>;
@@ -37,6 +39,7 @@ const StatCard: React.FC<{ icon: React.ReactNode, title: string, value: string |
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob }) => {
+  const { formatCurrency } = useCurrency();
   const totalCost = api.billingItems.reduce((sum, item) => sum + item.amount, 0);
   const totalCandidates = Object.keys(api.candidates).length;
   const hiredApplications = api.applications.filter(app => app.status === CandidateStatus.HIRED);
@@ -55,9 +58,6 @@ const Dashboard: React.FC<DashboardProps> = ({ api, onViewChange, onSelectJob })
     return acc;
   }, {});
 
-  const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  }
   
   const recentJobs = api.jobs.slice(0, 5);
 

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { View } from '../types.ts';
 import BriefcaseIcon from './icons/BriefcaseIcon.tsx';
@@ -7,6 +8,12 @@ import ShoppingCartIcon from './icons/ShoppingCartIcon.tsx';
 import UsersIcon from './icons/UsersIcon.tsx';
 import { useAuth } from '../hooks/useAuth.ts';
 import ArrowRightOnRectangleIcon from './icons/ArrowRightOnRectangleIcon.tsx';
+import ChatBubbleLeftRightIcon from './icons/ChatBubbleLeftRightIcon.tsx';
+import { useMessenger } from '../contexts/MessengerContext.tsx';
+import ChatBubbleLeftEllipsisIcon from './icons/ChatBubbleLeftEllipsisIcon.tsx';
+import { useCurrency } from '../contexts/CurrencyContext.tsx';
+import GlobeAltIcon from './icons/GlobeAltIcon.tsx';
+import UserGroupIcon from './icons/UserGroupIcon.tsx';
 
 interface HeaderProps {
   currentView: View;
@@ -15,11 +22,16 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => {
   const { user, logout } = useAuth();
+  const { openMessenger, unreadCount } = useMessenger();
+  const { currency, setCurrency, currencies } = useCurrency();
+
   const navItems: { view: View; label: string, icon: React.ReactNode }[] = [
     { view: 'dashboard', label: 'Dashboard', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
     { view: 'jobs', label: 'All Jobs', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
     { view: 'candidates', label: 'Candidates', icon: <UsersIcon className="h-5 w-5 mr-2" /> },
+    { view: 'team', label: 'Team', icon: <UserGroupIcon className="h-5 w-5 mr-2" /> },
     { view: 'marketplace', label: 'Marketplace', icon: <ShoppingCartIcon className="h-5 w-5 mr-2" /> },
+    { view: 'hr-connect', label: 'HR Connect', icon: <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" /> },
     { view: 'billing', label: 'Billing', icon: <BriefcaseIcon className="h-5 w-5 mr-2" /> },
   ];
 
@@ -56,9 +68,33 @@ const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => {
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
                  <span className="text-sm text-slate-600 mr-4">Welcome, {user?.name}</span>
+                <div className="relative">
+                    <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as any)}
+                        className="appearance-none bg-transparent pl-8 pr-3 py-1.5 border border-transparent text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-0 text-sm"
+                        aria-label="Select currency"
+                    >
+                        {currencies.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <GlobeAltIcon className="h-5 w-5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <button
+                    onClick={() => openMessenger()}
+                    className="relative p-1 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    title="Messenger"
+                    aria-label="Messenger"
+                >
+                    <ChatBubbleLeftEllipsisIcon className="h-6 w-6" />
+                    {unreadCount > 0 && (
+                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
+                            {unreadCount}
+                        </span>
+                    )}
+                </button>
                 <button
                     onClick={() => onViewChange('company-profile')}
-                    className="p-1 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="p-1 ml-2 rounded-full text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     title="Company Profile"
                     aria-label="Company Profile"
                     >

@@ -1,17 +1,16 @@
 
+
 import React from 'react';
 import type { BillingItem } from '../types.ts';
+import { useCurrency } from '../contexts/CurrencyContext.tsx';
 
 interface BillingSummaryProps {
   billingItems: BillingItem[];
 }
 
 const BillingSummary: React.FC<BillingSummaryProps> = ({ billingItems }) => {
+  const { formatCurrency } = useCurrency();
   const totalCost = billingItems.reduce((sum, item) => sum + item.amount, 0);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('en-US', {

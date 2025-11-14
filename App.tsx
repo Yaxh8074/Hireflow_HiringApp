@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header.tsx';
 import Dashboard from './components/Dashboard.tsx';
@@ -16,6 +17,10 @@ import LoginPage from './components/LoginPage.tsx';
 import CandidateAppLayout from './components/candidate/CandidateAppLayout.tsx';
 import { PaymentProvider } from './contexts/PaymentContext.tsx';
 import SignUpPage from './components/SignUpPage.tsx';
+import HRConnect from './components/HRConnect.tsx';
+import { MessengerProvider } from './contexts/MessengerContext.tsx';
+import { CurrencyProvider } from './contexts/CurrencyContext.tsx';
+import TeamManagement from './components/TeamManagement.tsx';
 
 
 const MainAppLayout: React.FC = () => {
@@ -60,6 +65,10 @@ const MainAppLayout: React.FC = () => {
         return <CandidateDatabase api={api} />;
        case 'company-profile':
         return <CompanyProfile />;
+       case 'hr-connect':
+        return <HRConnect api={api} />;
+      case 'team':
+        return <TeamManagement api={api} />;
       default:
         return <Dashboard api={api} onViewChange={handleViewChange} onSelectJob={handleSelectJob} />;
     }
@@ -107,14 +116,22 @@ const App: React.FC = () => {
   }
 
   if (user.role === 'candidate') {
-    return <CandidateAppLayout />;
+    return (
+        <CurrencyProvider>
+            <CandidateAppLayout />
+        </CurrencyProvider>
+    );
   }
   
   if (user.role === 'hiring-manager') {
     return (
-        <PaymentProvider>
-            <MainAppLayout />
-        </PaymentProvider>
+        <CurrencyProvider>
+            <PaymentProvider>
+                <MessengerProvider>
+                    <MainAppLayout />
+                </MessengerProvider>
+            </PaymentProvider>
+        </CurrencyProvider>
     );
   }
 

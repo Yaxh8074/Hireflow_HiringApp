@@ -1,8 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import type { ServiceType } from '../types.ts';
 import CreditCardIcon from './icons/CreditCardIcon.tsx';
 import CheckCircleIcon from './icons/CheckCircleIcon.tsx';
+import { useCurrency } from '../contexts/CurrencyContext.tsx';
 
 export interface PurchaseItem {
     service: ServiceType;
@@ -22,6 +24,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, item, onClose, onSu
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const { formatCurrency, currency } = useCurrency();
   
   useEffect(() => {
     if (isOpen) {
@@ -53,10 +56,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, item, onClose, onSu
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
-
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" aria-modal="true" role="dialog">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
@@ -81,11 +80,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, item, onClose, onSu
                             <span className="text-slate-600">{item.description}</span>
                             {isDiscountActive ? (
                                 <div className="text-right">
-                                    <p className="font-semibold text-slate-800">{formatCurrency(item.amount)}</p>
-                                    <p className="text-xs text-slate-400 line-through">{formatCurrency(item.amount / 0.1)}</p>
+                                    <p className="font-semibold text-slate-800">{formatCurrency(item.amount, 'USD')}</p>
+                                    <p className="text-xs text-slate-400 line-through">{formatCurrency(item.amount / 0.1, 'USD')}</p>
                                 </div>
                             ) : (
-                                <span className="font-semibold text-slate-800">{formatCurrency(item.amount)}</span>
+                                <span className="font-semibold text-slate-800">{formatCurrency(item.amount, 'USD')}</span>
                             )}
                         </div>
                         {isDiscountActive && (
@@ -118,7 +117,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, item, onClose, onSu
                             disabled={isProcessing}
                             className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
                         >
-                            {isProcessing ? 'Processing...' : `Pay ${formatCurrency(item.amount)}`}
+                            {isProcessing ? 'Processing...' : `Pay ${formatCurrency(item.amount, 'USD')}`}
                         </button>
                     </form>
                 </>

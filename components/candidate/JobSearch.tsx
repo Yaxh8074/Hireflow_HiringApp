@@ -1,7 +1,9 @@
 
+
 import React, { useState, useMemo } from 'react';
 import type { usePaygApi } from '../../hooks/usePaygApi.ts';
 import { JobStatus } from '../../types.ts';
+import { useCurrency } from '../../contexts/CurrencyContext.tsx';
 
 interface JobSearchProps {
   api: ReturnType<typeof usePaygApi>;
@@ -10,6 +12,7 @@ interface JobSearchProps {
 
 const JobSearch: React.FC<JobSearchProps> = ({ api, onSelectJob }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { formatSalaryRange } = useCurrency();
   
   const activeJobs = useMemo(() => api.jobs.filter(job => job.status === JobStatus.ACTIVE), [api.jobs]);
 
@@ -47,7 +50,7 @@ const JobSearch: React.FC<JobSearchProps> = ({ api, onSelectJob }) => {
               <div>
                 <h2 className="text-lg font-semibold text-indigo-600">{job.title}</h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  {job.location} <span className="mx-2 text-slate-300">&bull;</span> {job.salary}
+                  {job.location} <span className="mx-2 text-slate-300">&bull;</span> {formatSalaryRange(job.salary)}
                 </p>
                 <p className="text-sm text-slate-600 mt-3 max-w-2xl line-clamp-2">{job.description}</p>
               </div>

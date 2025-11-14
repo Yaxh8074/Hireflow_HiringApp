@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Job, Application } from '../../types.ts';
 import type { usePaygApi } from '../../hooks/usePaygApi.ts';
 import { useAuth } from '../../hooks/useAuth.ts';
 import ArrowLeftIcon from '../icons/ArrowLeftIcon.tsx';
 import PaperClipIcon from '../icons/PaperClipIcon.tsx';
+import { useCurrency } from '../../contexts/CurrencyContext.tsx';
 
 interface CandidateJobDetailProps {
   jobId: string;
@@ -16,6 +18,7 @@ const CandidateJobDetail: React.FC<CandidateJobDetailProps> = ({ jobId, api, onB
   const [job, setJob] = useState<Job | null>(null);
   const { user } = useAuth();
   const candidateProfile = useMemo(() => user ? api.candidates[user.id] : null, [user, api.candidates]);
+  const { formatSalaryRange } = useCurrency();
 
   // State for the application form
   const [resumeText, setResumeText] = useState('');
@@ -96,7 +99,7 @@ const CandidateJobDetail: React.FC<CandidateJobDetailProps> = ({ jobId, api, onB
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">{job.title}</h1>
-            <p className="mt-1 text-slate-500">{job.location} &bull; {job.salary}</p>
+            <p className="mt-1 text-slate-500">{job.location} &bull; {formatSalaryRange(job.salary)}</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <button 
