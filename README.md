@@ -1,6 +1,7 @@
 # PAYG Hire: The AI-Native Hiring Platform
 
-![Platform Logo](https://raw.githubusercontent.com/google/aistudio-specification/main/misc/sample_images/payg_hr/logo.png)
+![Platform Logo](<img width="1913" height="836" alt="image" src="https://github.com/user-attachments/assets/ff3c91e2-acea-4501-a775-a4862aea7a48" />
+)
 
 ## 🚀 Overview
 
